@@ -1,0 +1,6 @@
+{
+  "name": "斗罗大陆：武魂觉醒与神祇之路",
+  "description": "沉浸式策略斗罗大陆RPG：支持武魂觉醒、魂兽猎杀与魂环吸收、四大神祇九考、一至五字斗铠铸造、终极斗罗伙伴协同、跨服天梯PVP、星际机甲舰队、全大陆精英赛等丰富玩法！",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
