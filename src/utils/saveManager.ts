@@ -4,7 +4,7 @@ import { INITIAL_TANG_SECT_SKILLS, CRAFTABLE_HIDDEN_WEAPONS, createInitialTangSe
 import { createInitialSpiritPagodaState } from '../data/spiritPagodaData';
 import { ICE_FIRE_HERBS } from '../data/immortalHerbs';
 import { EIGHT_MERIDIANS, WATERFALL_STAGES, ZIJI_EYE_STAGES_CONFIG, SHREK_COMRADES_DATA } from '../data/cultivation';
-import { DEFAULT_AVATAR_URL } from '../data/avatars';
+import { DEFAULT_AVATAR_URL, ANIME_AVATARS } from '../data/avatars';
 import { createInitialBattleArmor } from '../data/battleArmor';
 import { INITIAL_SOUL_TOOLS } from '../data/soulTools';
 import { INITIAL_DOULUO4_COMPANIONS } from '../data/douluo4Companions';
@@ -13,6 +13,30 @@ import { createDefaultInterstellarState } from '../data/interstellarData';
 import { calculateAllDivineTalentBonuses } from '../data/godTalents';
 
 const SAVE_KEY = 'douluo_dalu_rpg_save_v1';
+
+export const RANDOM_CHARACTER_NAMES = [
+  '唐三', '霍雨浩', '唐舞麟', '蓝轩宇', '尘心', '千仞雪',
+  '戴沐白', '朱竹清', '马红俊', '古月娜', '波塞西', '独孤博',
+  '宁荣荣', '奥斯卡', '小舞', '柳二龙', '比比东', '千道流'
+];
+
+export function getRandomMartialSoul(): typeof ALL_MARTIAL_SOULS[0] {
+  const randomIndex = Math.floor(Math.random() * ALL_MARTIAL_SOULS.length);
+  return ALL_MARTIAL_SOULS[randomIndex];
+}
+
+export function createRandomPlayer(customName?: string): Player {
+  const primary = getRandomMartialSoul();
+  const otherSouls = ALL_MARTIAL_SOULS.filter(s => s.id !== primary.id);
+  const secondary = otherSouls[Math.floor(Math.random() * otherSouls.length)] || ALL_MARTIAL_SOULS[1];
+
+  const randomName = customName || RANDOM_CHARACTER_NAMES[Math.floor(Math.random() * RANDOM_CHARACTER_NAMES.length)];
+  const randomAvatar = ANIME_AVATARS[Math.floor(Math.random() * ANIME_AVATARS.length)]?.url || DEFAULT_AVATAR_URL;
+
+  const player = createDefaultPlayer(randomName, primary.id, true, secondary.id);
+  player.avatarUrl = randomAvatar;
+  return player;
+}
 
 export function createDefaultPlayer(
   name: string,

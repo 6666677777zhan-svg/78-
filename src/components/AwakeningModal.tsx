@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ALL_MARTIAL_SOULS } from '../data/martialSouls';
 import { Player } from '../types/game';
-import { createDefaultPlayer } from '../utils/saveManager';
+import { createDefaultPlayer, RANDOM_CHARACTER_NAMES } from '../utils/saveManager';
 import { SoundEngine } from '../utils/audio';
 import { ANIME_AVATARS, DEFAULT_AVATAR_URL } from '../data/avatars';
 import confetti from 'canvas-confetti';
@@ -9,7 +9,7 @@ import {
   Sparkles, Shield, Flame, Zap, Sun, Hammer, Moon, 
   Sprout, Sword, Skull, Heart, Snowflake, Crown, Layers, 
   ArrowRight, CheckCircle, RefreshCw, Wand2, Eye, Award,
-  Check, Image, Volume2
+  Check, Image, Volume2, Dices, Shuffle
 } from 'lucide-react';
 
 interface AwakeningModalProps {
@@ -218,14 +218,28 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
   onAwakenPlayer,
   isOpen, 
   onClose,
-  initialSoulId = 'haotian_hammer'
+  initialSoulId
 }) => {
   const [step, setStep] = useState<'hall' | 'select' | 'awakening' | 'result'>('hall');
-  const [playerName, setPlayerName] = useState('唐三');
+  const [playerName, setPlayerName] = useState(() => {
+    return RANDOM_CHARACTER_NAMES[Math.floor(Math.random() * RANDOM_CHARACTER_NAMES.length)] || '唐三';
+  });
   const [playerGender, setPlayerGender] = useState<'male' | 'female'>('male');
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string>(DEFAULT_AVATAR_URL);
-  const [selectedPrimarySoulId, setSelectedPrimarySoulId] = useState(initialSoulId);
-  const [selectedSecondSoulId, setSelectedSecondSoulId] = useState('blue_silver_emperor');
+  
+  // Initialize with a random soul pair
+  const [selectedPrimarySoulId, setSelectedPrimarySoulId] = useState(() => {
+    if (initialSoulId) return initialSoulId;
+    const randomIdx = Math.floor(Math.random() * ALL_MARTIAL_SOULS.length);
+    return ALL_MARTIAL_SOULS[randomIdx]?.id || 'haotian_hammer';
+  });
+  
+  const [selectedSecondSoulId, setSelectedSecondSoulId] = useState(() => {
+    const otherSouls = ALL_MARTIAL_SOULS.filter(s => s.id !== initialSoulId);
+    const randomIdx = Math.floor(Math.random() * otherSouls.length);
+    return otherSouls[randomIdx]?.id || 'blue_silver_emperor';
+  });
+  
   const [isTwinSouls, setIsTwinSouls] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'attack' | 'agility' | 'control' | 'support' | 'god'>('all');
   
@@ -234,15 +248,41 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
   const [crystalEnergy, setCrystalEnergy] = useState(0);
   const [awakeningText, setAwakeningText] = useState('正在汇聚天地纯净灵力...');
 
-  // Start BGM on modal open & cleanup on close
+  // Roll random martial souls and identity
+  const handleRandomRoll = useCallback((autoTriggerCeremony = false) => {
+    SoundEngine.playSoulRingAura('gold');
+    const randPrimary = ALL_MARTIAL_SOULS[Math.floor(Math.random() * ALL_MARTIAL_SOULS.length)] || ALL_MARTIAL_SOULS[0];
+    const otherSouls = ALL_MARTIAL_SOULS.filter(s => s.id !== randPrimary.id);
+    const randSecondary = otherSouls[Math.floor(Math.random() * otherSouls.length)] || ALL_MARTIAL_SOULS[1];
+    const randAvatar = ANIME_AVATARS[Math.floor(Math.random() * ANIME_AVATARS.length)];
+    const randName = RANDOM_CHARACTER_NAMES[Math.floor(Math.random() * RANDOM_CHARACTER_NAMES.length)] || '唐三';
+
+    setSelectedPrimarySoulId(randPrimary.id);
+    setSelectedSecondSoulId(randSecondary.id);
+    if (randAvatar) setSelectedAvatarUrl(randAvatar.url);
+    setPlayerName(randName);
+    setIsTwinSouls(true);
+
+    if (autoTriggerCeremony) {
+      setTimeout(() => {
+        handleStartAwakeningCeremony();
+      }, 50);
+    }
+  }, []);
+
+  // Start BGM on modal open & auto randomize on opening
   useEffect(() => {
     if (isOpen) {
       SoundEngine.startAwakeningBgm();
+      // Auto roll random souls when opened if no initialSoulId passed
+      if (!initialSoulId) {
+        handleRandomRoll(false);
+      }
     }
     return () => {
       SoundEngine.stopAwakeningBgm();
     };
-  }, [isOpen]);
+  }, [isOpen, initialSoulId, handleRandomRoll]);
 
   if (!isOpen) return null;
 
@@ -443,15 +483,25 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 flex justify-center">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={() => {
+                  handleRandomRoll(true);
+                }}
+                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black rounded-2xl shadow-[0_0_30px_rgba(236,72,153,0.5)] transition-all hover:scale-105 active:scale-95 text-base flex items-center justify-center gap-2"
+              >
+                <Dices className="w-5 h-5 text-amber-300 animate-spin" style={{ animationDuration: '8s' }} />
+                <span>🎲 随机天赐武魂 · 一键觉醒</span>
+              </button>
+
               <button
                 onClick={() => {
                   SoundEngine.playClick();
                   setStep('select');
                 }}
-                className="px-8 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all hover:scale-105 active:scale-95 text-base flex items-center gap-2"
+                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all hover:scale-105 active:scale-95 text-base flex items-center justify-center gap-2"
               >
-                <span>进入武魂殿堂</span>
+                <span>殿堂挑选武魂</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -472,21 +522,31 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
                 </p>
               </div>
 
-              {/* Twin Souls Toggle */}
-              <button
-                onClick={() => {
-                  SoundEngine.playClick();
-                  setIsTwinSouls(!isTwinSouls);
-                }}
-                className={`px-3.5 py-1.5 rounded-xl border text-xs font-black flex items-center gap-2 transition-all ${
-                  isTwinSouls
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                    : 'bg-slate-800 border-slate-700 text-slate-400'
-                }`}
-              >
-                <Layers className="w-4 h-4" />
-                <span>双生武魂模式: {isTwinSouls ? '【已开启】' : '【已关闭】'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleRandomRoll(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-purple-500/50 bg-purple-950/80 hover:bg-purple-900 text-purple-300 text-xs font-black flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(168,85,247,0.3)] active:scale-95"
+                >
+                  <Dices className="w-4 h-4 text-amber-300" />
+                  <span>🎲 随机换一批</span>
+                </button>
+
+                {/* Twin Souls Toggle */}
+                <button
+                  onClick={() => {
+                    SoundEngine.playClick();
+                    setIsTwinSouls(!isTwinSouls);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl border text-xs font-black flex items-center gap-2 transition-all ${
+                    isTwinSouls
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                      : 'bg-slate-800 border-slate-700 text-slate-400'
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>双生武魂: {isTwinSouls ? '【开启】' : '【关闭】'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Category Tabs */}
@@ -620,12 +680,19 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setStep('hall')}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-xl"
+                  className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-xl"
                 >
-                  返回上一步
+                  返回
+                </button>
+                <button
+                  onClick={() => handleRandomRoll(false)}
+                  className="px-3.5 py-2 bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-xs font-black rounded-xl flex items-center gap-1 transition-all active:scale-95"
+                >
+                  <Dices className="w-3.5 h-3.5 text-amber-300" />
+                  <span>随机搭配</span>
                 </button>
                 <button
                   onClick={handleStartAwakeningCeremony}

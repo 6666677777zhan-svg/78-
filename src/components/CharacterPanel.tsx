@@ -11,7 +11,7 @@ import { ANIME_AVATARS, DEFAULT_AVATAR_URL } from '../data/avatars';
 import { 
   User, Shield, Heart, Zap, Swords, Sparkles, Award, 
   Crown, Flame, ArrowRightLeft, ShieldAlert, Crosshair,
-  Sun, Moon, Skull, PlusCircle, Check, Camera, Image, BookOpen, Layers
+  Sun, Moon, Skull, PlusCircle, Check, Camera, Image, BookOpen, Layers, Dices
 } from 'lucide-react';
 
 interface CharacterPanelProps {
@@ -24,6 +24,7 @@ interface CharacterPanelProps {
   onNavigateToTrials?: () => void;
   onUpdatePlayer?: (updater: (prev: Player) => Player) => void;
   onOpenMeditation?: () => void;
+  onOpenAwakening?: () => void;
   showToast?: (msg: string, type?: 'success' | 'info' | 'gold') => void;
 }
 
@@ -37,6 +38,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
   onNavigateToTrials,
   onUpdatePlayer,
   onOpenMeditation,
+  onOpenAwakening,
   showToast
 }) => {
   const [showSoulInheritModal, setShowSoulInheritModal] = useState(false);
@@ -215,7 +217,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
           {/* Twin Martial Souls Switcher & Awakening Button */}
           <div className="bg-slate-950/90 border border-slate-800 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
             <span className="text-xs text-slate-400 font-semibold">当前出战武魂:</span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {player.martialSouls.map((soul, idx) => (
                 <button
                   key={soul.id + idx}
@@ -242,6 +244,19 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                   className="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-950 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900 transition-all flex items-center gap-1"
                 >
                   <PlusCircle className="w-3.5 h-3.5" /> 觉醒第二武魂
+                </button>
+              )}
+
+              {onOpenAwakening && (
+                <button
+                  onClick={() => {
+                    SoundEngine.playClick();
+                    onOpenAwakening();
+                  }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-950/80 border border-purple-500/50 text-purple-300 hover:bg-purple-900 transition-all flex items-center gap-1 shadow-[0_0_10px_rgba(168,85,247,0.3)] ml-auto"
+                  title="重新进行武魂觉醒大典或随机摇号"
+                >
+                  <Dices className="w-3.5 h-3.5 text-amber-300" /> 重新觉醒/随机选武魂
                 </button>
               )}
             </div>

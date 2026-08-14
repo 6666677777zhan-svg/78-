@@ -25,6 +25,7 @@ import {
   loadPlayer, 
   savePlayer, 
   createDefaultPlayer, 
+  createRandomPlayer,
   calculatePlayerStats, 
   clearSave 
 } from './utils/saveManager';
@@ -73,7 +74,7 @@ export default function App() {
   const [player, setPlayer] = useState<Player>(() => {
     const saved = loadPlayer();
     if (saved) return saved;
-    return createDefaultPlayer('唐三', 'haotian_hammer', true, 'blue_silver_emperor');
+    return createRandomPlayer();
   });
 
   // 2. Navigation State
@@ -754,6 +755,7 @@ export default function App() {
                     setIsMeditationOpen(true);
                     setIsAutoOfflineNotice(false);
                   }}
+                  onOpenAwakening={() => setIsAwakeningOpen(true)}
                   showToast={(msg, type) => showToast(msg, type === 'warning' ? 'gold' : type === 'success' ? 'success' : 'info')}
                 />
               )}
