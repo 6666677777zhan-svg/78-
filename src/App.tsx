@@ -29,6 +29,11 @@ import {
   calculatePlayerStats, 
   clearSave 
 } from './utils/saveManager';
+import { 
+  getActiveGoogleUser, 
+  savePlayerToGoogleCloud, 
+  isGoogleAutoSaveEnabled 
+} from './utils/googleAuthManager';
 import { ALL_MARTIAL_SOULS, getSoulRankTitle } from './data/martialSouls';
 import { SoundEngine } from './utils/audio';
 import confetti from 'canvas-confetti';
@@ -60,6 +65,7 @@ import { InventoryModal } from './components/InventoryModal';
 import { AwakeningModal } from './components/AwakeningModal';
 import { SoulRingAbsorbModal } from './components/SoulRingAbsorbModal';
 import { MeditationModal } from './components/MeditationModal';
+import { GoogleCloudSaveModal } from './components/GoogleCloudSaveModal';
 
 interface CombatContext {
   type: 'forest' | 'arena' | 'slaughter' | 'god_test';
@@ -70,6 +76,10 @@ interface CombatContext {
 }
 
 export default function App() {
+  const [hasInitialSave] = useState<boolean>(() => {
+    return loadPlayer() !== null;
+  });
+
   // 1. Player State with Save/Load
   const [player, setPlayer] = useState<Player>(() => {
     const saved = loadPlayer();
@@ -82,11 +92,19 @@ export default function App() {
 
   // 3. Modals State
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-  const [isAwakeningOpen, setIsAwakeningOpen] = useState(false);
+  const [isAwakeningOpen, setIsAwakeningOpen] = useState(() => !hasInitialSave);
+  const [isGoogleCloudOpen, setIsGoogleCloudOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMeditationOpen, setIsMeditationOpen] = useState(false);
   const [isAutoOfflineNotice, setIsAutoOfflineNotice] = useState(false);
   const [absorbingBeast, setAbsorbingBeast] = useState<SoulBeast | null>(null);
+
+  // If user enters for the first time without save, auto show Awakening / Google Login
+  useEffect(() => {
+    if (!hasInitialSave) {
+      setIsAwakeningOpen(true);
+    }
+  }, [hasInitialSave]);
 
   // Auto Offline Meditation Check on Mount
   useEffect(() => {
@@ -119,9 +137,13 @@ export default function App() {
     }, 3500);
   }, []);
 
-  // Save on change
+  // Save on change (local persistence + Google Cloud auto-sync)
   useEffect(() => {
     savePlayer(player);
+    const activeGoogle = getActiveGoogleUser();
+    if (activeGoogle && isGoogleAutoSaveEnabled()) {
+      savePlayerToGoogleCloud(activeGoogle, player, `Lv.${player.level} ${player.name}`);
+    }
   }, [player]);
 
   // Level Up / Exp Handling
@@ -678,6 +700,7 @@ export default function App() {
           setPlayer(prev => ({ ...prev, worldDifficulty: diff }));
           showToast(`世界难度纪元已调整为：${diff === 'godlike' ? '深红极难 ⚡' : diff === 'nightmare' ? '修罗地狱 🔥' : '凡俗之路'}`);
         }}
+        onOpenGoogleCloud={() => setIsGoogleCloudOpen(true)}
       />
 
       {/* TOAST FLOATING BANNER */}
@@ -756,6 +779,7 @@ export default function App() {
                     setIsAutoOfflineNotice(false);
                   }}
                   onOpenAwakening={() => setIsAwakeningOpen(true)}
+                  onOpenGoogleCloud={() => setIsGoogleCloudOpen(true)}
                   showToast={(msg, type) => showToast(msg, type === 'warning' ? 'gold' : type === 'success' ? 'success' : 'info')}
                 />
               )}
@@ -934,6 +958,20 @@ export default function App() {
         isOpen={isAwakeningOpen}
         onClose={() => setIsAwakeningOpen(false)}
         onAwakenPlayer={handleAwakeningComplete}
+        onOpenGoogleCloud={() => setIsGoogleCloudOpen(true)}
+      />
+
+      {/* GOOGLE / GMAIL CLOUD SAVE MODAL (Google 云端存档中心) */}
+      <GoogleCloudSaveModal 
+        isOpen={isGoogleCloudOpen}
+        onClose={() => setIsGoogleCloudOpen(false)}
+        player={player}
+        onRestorePlayer={(restoredPlayer) => {
+          setPlayer(restoredPlayer);
+          savePlayer(restoredPlayer);
+          setIsAwakeningOpen(false);
+        }}
+        showToast={(msg, type) => showToast(msg, type === 'gold' ? 'gold' : type === 'success' ? 'success' : 'info')}
       />
 
       {/* SOUL RING ABSORPTION MODAL */}

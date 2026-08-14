@@ -3,11 +3,12 @@ import { Player, WorldDifficulty } from '../types/game';
 import { getSoulRankTitle } from '../data/martialSouls';
 import { SoundEngine, isSoundEnabled, toggleSound } from '../utils/audio';
 import { DEFAULT_AVATAR_URL } from '../data/avatars';
+import { getActiveGoogleUser } from '../utils/googleAuthManager';
 import { 
   TreePine, Trophy, Hammer, Droplets, Skull, Waves, 
   BookOpen, User, Volume2, VolumeX, Package, RotateCcw, 
   Coins, Sparkles, Crown, Rocket, Swords, MessageSquare,
-  Flame, Zap, ShieldAlert, ChevronDown, Moon
+  Flame, Zap, ShieldAlert, ChevronDown, Moon, Cloud, CheckCircle
 } from 'lucide-react';
 
 export type GameView = 
@@ -38,6 +39,7 @@ interface NavbarProps {
   onOpenChat: () => void;
   onOpenMeditation: () => void;
   onChangeDifficulty: (difficulty: WorldDifficulty) => void;
+  onOpenGoogleCloud?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -48,10 +50,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetGame,
   onOpenChat,
   onOpenMeditation,
-  onChangeDifficulty
+  onChangeDifficulty,
+  onOpenGoogleCloud
 }) => {
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [showDiffMenu, setShowDiffMenu] = useState(false);
+  const activeGoogleUser = getActiveGoogleUser();
   const rankInfo = getSoulRankTitle(player.level);
 
   const handleToggleAudio = () => {
@@ -124,7 +128,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Quick Info & Action Controls on Mobile */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-1.5">
+            {onOpenGoogleCloud && (
+              <button
+                onClick={onOpenGoogleCloud}
+                className={`p-2 rounded-xl border flex items-center justify-center ${
+                  activeGoogleUser
+                    ? 'bg-blue-950/80 border-blue-500/50 text-blue-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`}
+                title="Google 云端存档"
+              >
+                <Cloud className="w-4 h-4 text-blue-400" />
+              </button>
+            )}
             <button
               onClick={onOpenMeditation}
               className="p-2 bg-gradient-to-r from-indigo-950 to-purple-950 border border-indigo-500/50 rounded-xl text-amber-300 shadow-md"
@@ -266,6 +283,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             <MessageSquare className="w-4 h-4 text-purple-300 animate-pulse" />
             <span>世界频道</span>
           </button>
+
+          {/* Google Cloud Save Button */}
+          {onOpenGoogleCloud && (
+            <button
+              onClick={onOpenGoogleCloud}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
+                activeGoogleUser
+                  ? 'bg-blue-950/80 hover:bg-blue-900 border-blue-500/50 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]'
+                  : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
+              }`}
+              title="Google / Gmail 云端存档"
+            >
+              <Cloud className={`w-4 h-4 ${activeGoogleUser ? 'text-blue-400' : 'text-slate-400'}`} />
+              <span className="max-w-[120px] truncate">
+                {activeGoogleUser ? activeGoogleUser.email.split('@')[0] : 'Google云存档'}
+              </span>
+              {activeGoogleUser && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              )}
+            </button>
+          )}
 
           <div className="flex items-center gap-1.5 text-xs text-yellow-400 font-bold bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
             <Coins className="w-4 h-4" />
