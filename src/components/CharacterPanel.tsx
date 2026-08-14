@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Player, SoulBone, SoulBoneSlot, MartialSoul } from '../types/game';
 import { SoulRingsDisplay } from './SoulRingsDisplay';
 import { SoulRingFusionModal } from './SoulRingFusionModal';
+import { GodAuraSection, GodAuraAvatarRing } from './GodAuraSection';
+import { MartialSoulSkillFxOverlay, ActiveSkillFxState } from './MartialSoulSkillFxOverlay';
 import { getSoulRankTitle, ALL_MARTIAL_SOULS } from '../data/martialSouls';
 import { calculatePlayerStats } from '../utils/saveManager';
 import { SoundEngine } from '../utils/audio';
@@ -19,6 +21,7 @@ interface CharacterPanelProps {
   onUnequipBone?: (slot: SoulBoneSlot) => void;
   onUpdateAvatar?: (avatarUrl: string) => void;
   onNavigateToGuide?: () => void;
+  onNavigateToTrials?: () => void;
   onUpdatePlayer?: (updater: (prev: Player) => Player) => void;
   onOpenMeditation?: () => void;
   showToast?: (msg: string, type?: 'success' | 'info' | 'gold') => void;
@@ -31,6 +34,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
   onUnequipBone,
   onUpdateAvatar,
   onNavigateToGuide,
+  onNavigateToTrials,
   onUpdatePlayer,
   onOpenMeditation,
   showToast
@@ -39,11 +43,43 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
   const [selectedInheritSoulId, setSelectedInheritSoulId] = useState<string>('seven_kill_sword');
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showSoulRingFusionModal, setShowSoulRingFusionModal] = useState(false);
+  const [activeSkillFx, setActiveSkillFx] = useState<ActiveSkillFxState | null>(null);
 
   const stats = calculatePlayerStats(player);
   const rankInfo = getSoulRankTitle(player.level);
   const activeSoul = player.martialSouls[player.activeSoulIndex] || player.martialSouls[0];
   const avatarImage = player.avatarUrl || DEFAULT_AVATAR_URL;
+
+  const isGodPossessionActive = (player.godPossessionUntil || 0) > Date.now();
+
+  const handleGodHaloClick = () => {
+    const godPos = player.godPosition || '海神';
+    const godColorNames: Record<string, string> = {
+      '海神': '湛蓝波浪色',
+      '修罗神': '暗红裂痕色',
+      '天使神': '金阳日辉色',
+      '罗刹神': '幽冥暗紫色',
+      '情绪之神': '七彩星光色',
+      '海神 & 修罗双神': '至高金红变异色'
+    };
+
+    onUpdatePlayer?.((prev) => ({
+      ...prev,
+      godPossessionUntil: Date.now() + 5000
+    }));
+
+    SoundEngine.playDivineDeclaration(godPos);
+
+    setActiveSkillFx({
+      id: `fx_god_${Date.now()}`,
+      skillName: `【${godPos}】神力附体`,
+      soulName: godPos,
+      colorTheme: godPos === '修罗神' ? 'asura' : godPos === '天使神' ? 'angel' : 'seagod',
+      godPossessionTheme: godPos
+    });
+
+    showToast?.(`⚡【神力附体】激发！主角全技能释放特效发生【${godColorNames[godPos] || '神威变异色'}】变异（持续5秒）！`, 'gold');
+  };
 
   const boneSlots: { slot: SoulBoneSlot; name: string }[] = [
     { slot: 'head', name: '头部魂骨' },
@@ -55,9 +91,22 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
     { slot: 'external', name: '外附魂骨 (八蛛矛)' }
   ];
 
+  const currentAffinity = player.godPosition === '海神' ? (player.seaGodAffinity || 0)
+    : player.godPosition === '修罗神' ? (player.asuraGodAffinity || 0)
+    : player.godPosition === '天使神' ? (player.angelGodAffinity || 0)
+    : player.godPosition === '罗刹神' ? (player.rakshasaGodAffinity || 0)
+    : player.godPosition === '情绪之神' ? (player.emotionGodAffinity || 0)
+    : player.godPosition === '至高龙神' ? (player.dragonGodAffinity || 0)
+    : Math.max(player.seaGodAffinity || 0, player.asuraGodAffinity || 0, player.angelGodAffinity || 0, player.rakshasaGodAffinity || 0, player.emotionGodAffinity || 0, player.dragonGodAffinity || 0);
+
   return (
-    <div className="space-y-6">
-      
+    <div className="space-y-6 relative">
+      {/* Active Skill Effect Overlay */}
+      <MartialSoulSkillFxOverlay
+        activeFx={activeSkillFx}
+        onAnimationComplete={() => setActiveSkillFx(null)}
+      />
+
       {/* HEADER STATUS CARD */}
       <div className="bg-slate-900/90 border border-amber-500/40 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-full bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -74,27 +123,25 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
               className="relative flex items-center justify-center cursor-pointer group"
               title="点击更换角色立绘头像"
             >
-              {/* Soul Aura Ring */}
-              <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-amber-500 via-rose-500 to-cyan-400 shadow-[0_0_25px_rgba(251,191,36,0.6)] group-hover:shadow-[0_0_35px_rgba(244,114,182,0.8)] transition-all">
+              {/* Soul & Divine God Aura Ring */}
+              <GodAuraAvatarRing
+                godPosition={player.godPosition}
+                affinity={currentAffinity}
+                onGodHaloClick={handleGodHaloClick}
+              >
                 <img 
                   src={avatarImage} 
                   alt={player.name}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover rounded-full border-2 border-slate-950 group-hover:scale-105 transition-transform"
                 />
-              </div>
 
-              {/* Hover Badge */}
-              <div className="absolute inset-0 bg-slate-950/50 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-5 h-5 text-amber-300" />
-                <span className="text-[9px] text-amber-200 font-bold">更换头像</span>
-              </div>
-
-              {player.godPosition ? (
-                <Crown className="w-8 h-8 text-amber-300 absolute -top-3 -right-2 animate-bounce drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] pointer-events-none" />
-              ) : player.level >= 100 ? (
-                <Crown className="w-7 h-7 text-amber-300 absolute -top-3 -right-2 animate-bounce pointer-events-none" />
-              ) : null}
+                {/* Hover Badge */}
+                <div className="absolute inset-0 bg-slate-950/50 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-5 h-5 text-amber-300" />
+                  <span className="text-[9px] text-amber-200 font-bold">更换头像</span>
+                </div>
+              </GodAuraAvatarRing>
             </div>
 
             <div>
@@ -131,6 +178,17 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                     <BookOpen className="w-3 h-3" /> 玩法指南
                   </button>
                 )}
+                {onNavigateToTrials && (
+                  <button
+                    onClick={() => {
+                      SoundEngine.playClick();
+                      onNavigateToTrials();
+                    }}
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900 transition-all flex items-center gap-1 shadow-sm"
+                  >
+                    <Crown className="w-3 h-3 text-cyan-400" /> 神考与天赋树
+                  </button>
+                )}
                 <span className={`px-3 py-0.5 rounded-full text-xs border border-amber-500/40 bg-amber-950/60 ${rankInfo.colorClass}`}>
                   {rankInfo.title}
                 </span>
@@ -141,7 +199,7 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
                 )}
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                魂师等级: <strong className="text-amber-400 font-bold">Lv.{player.level}</strong> / 100 · 金魂币: <strong className="text-yellow-400">{player.gold.toLocaleString()}</strong>
+                魂师等级: <strong className="text-amber-400 font-bold">Lv.{player.level}</strong> / 100 · 金魂币: <strong className="text-yellow-400">{player.gold.toLocaleString()}</strong> · 神源点: <strong className="text-amber-300 font-bold">{player.divineSourcePoints || 0}</strong>
               </p>
 
               {/* Exp Bar */}
@@ -192,6 +250,13 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
         </div>
       </div>
 
+      {/* DIVINE GOD AURA SECTION */}
+      <GodAuraSection 
+        player={player} 
+        onNavigateToTrials={onNavigateToTrials} 
+        onGodHaloClick={handleGodHaloClick}
+      />
+
       {/* DUAL COLUMN: SOUL RINGS & CORE ATTRIBUTES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
@@ -233,15 +298,46 @@ export const CharacterPanel: React.FC<CharacterPanelProps> = ({
 
           {/* Soul Skills List */}
           <div className="w-full text-left space-y-2 mt-4 pt-3 border-t border-slate-800">
-            <h4 className="text-xs font-bold text-slate-300">已附带魂技:</h4>
+            <div className="flex justify-between items-center">
+              <h4 className="text-xs font-bold text-slate-300">已附带魂技:</h4>
+              {player.godPosition && (
+                <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-500/40">
+                  <Crown className="w-3 h-3 text-amber-400 animate-pulse" /> 神技宣言模式
+                </span>
+              )}
+            </div>
             {activeSoul.skills.length === 0 ? (
               <p className="text-xs text-slate-500 italic">暂未吸收魂环。前往星斗大森林猎杀魂兽！</p>
             ) : (
               activeSoul.skills.map((skill, idx) => (
-                <div key={skill.id} className="p-2.5 bg-slate-950/70 border border-slate-800/80 rounded-xl text-xs space-y-0.5">
+                <div key={skill.id} className="p-2.5 bg-slate-950/70 border border-slate-800/80 rounded-xl text-xs space-y-1.5 hover:border-amber-500/40 transition-all">
                   <div className="flex justify-between items-center">
                     <strong className="text-amber-300">第{idx + 1}魂技 · {skill.name}</strong>
-                    <span className="text-[10px] text-cyan-400 font-semibold">{skill.soulPowerCost} 魂力消耗</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-cyan-400 font-semibold">{skill.soulPowerCost} 魂力</span>
+                      <button
+                        onClick={() => {
+                          const isPossessed = (player.godPossessionUntil || 0) > Date.now();
+                          const godPos = player.godPosition || '海神';
+                          if (isPossessed || player.godPosition) {
+                            SoundEngine.playDivineDeclaration(player.godPosition || '海神', skill.name);
+                          } else {
+                            SoundEngine.playSoulRingAura(skill.ringColor);
+                          }
+                          setActiveSkillFx({
+                            id: `fx_${Date.now()}_${idx}`,
+                            skillName: skill.name,
+                            soulName: activeSoul.chineseName || activeSoul.name,
+                            colorTheme: skill.ringColor === 'red' ? 'phoenix' : skill.ringColor === 'purple' ? 'spider' : 'gold',
+                            godPossessionTheme: isPossessed ? godPos : (player.godPosition ? godPos : null)
+                          });
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:brightness-110 text-slate-950 font-black text-[10px] shadow-md transition-transform active:scale-95 flex items-center gap-1"
+                      >
+                        <Zap className="w-3 h-3 fill-slate-950" />
+                        <span>{player.godPosition ? '释放神技' : '演练魂技'}</span>
+                      </button>
+                    </div>
                   </div>
                   <p className="text-slate-400 text-[11px]">{skill.description}</p>
                 </div>

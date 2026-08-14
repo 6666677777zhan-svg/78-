@@ -181,16 +181,20 @@ export interface Player {
   divineMetals?: { [key: string]: number }; // 沉银、百炼精金、灵锻秘银、天锻神金
   stats?: PlayerStats;
 
-  // Divine God Trials (四大神考)
-  seaGodTestLevel: number; // 0 to 9
-  asuraGodTestLevel: number; // 0 to 9
-  angelGodTestLevel: number; // 0 to 9
-  rakshasaGodTestLevel: number; // 0 to 9
+  // Divine God Trials (六大神考: 海神, 修罗, 天使, 罗刹, 情绪之神, 龙神)
+  seaGodTestLevel: number; // 0 to 12
+  asuraGodTestLevel: number; // 0 to 12
+  angelGodTestLevel: number; // 0 to 12
+  rakshasaGodTestLevel: number; // 0 to 12
+  emotionGodTestLevel?: number; // 0 to 12
+  dragonGodTestLevel?: number; // 0 to 12
 
   seaGodAffinity: number; // 0 to 100%
   asuraGodAffinity: number; // 0 to 100%
   angelGodAffinity: number; // 0 to 100%
   rakshasaGodAffinity: number; // 0 to 100%
+  emotionGodAffinity?: number; // 0 to 100%
+  dragonGodAffinity?: number; // 0 to 100%
 
   // Divine Domains (至高领域)
   hasKillingGodDomain: boolean; // 杀神领域
@@ -200,11 +204,17 @@ export interface Player {
   hasAsuraDomain: boolean; // 修罗神领域
   hasRakshasaDomain: boolean; // 罗刹领域
   hasDeathDomain: boolean; // 死亡领域
+  hasDragonGodDomain?: boolean; // 龙神领域
   activeDomain?: string | null;
 
   // Divine Position & Artifacts (神位与超神器)
-  godPosition?: '海神' | '修罗神' | '天使神' | '罗刹神' | '海神 & 修罗双神' | null;
-  divineArtifacts: string[]; // e.g. '海神三叉戟', '修罗魔剑', '天使圣剑', '罗刹魔镰'
+  godPosition?: '海神' | '修罗神' | '天使神' | '罗刹神' | '情绪之神' | '至高龙神' | '海神 & 修罗双神' | null;
+  divineArtifacts: string[]; // e.g. '海神三叉戟', '修罗魔剑', '天使圣剑', '罗刹魔镰', '永恒之眼'
+  divineSourcePoints?: number; // 神源点 (通过神考获得，用于升级神祇天赋树)
+  divineTalents?: {
+    [godType: string]: { [talentId: string]: number }; // godType -> talentId -> current level
+  };
+  godPossessionUntil?: number; // 神力附体状态截止时间戳 (点击GodHalo后持续5秒，使全技能特效发生对应神效颜色变异)
 
   // Martial Souls (supports Twin Souls)
   martialSouls: MartialSoul[];

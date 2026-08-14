@@ -19,7 +19,8 @@ import {
   ArenaBadge,
   WorldDifficulty
 } from './types/game';
-import { GodTest } from './data/godTrials';
+import { GodTest, GodType } from './data/godTrials';
+import { getSpentPointsInGodTree } from './data/godTalents';
 import { 
   loadPlayer, 
   savePlayer, 
@@ -354,50 +355,72 @@ export default function App() {
       let asuraLvl = prev.asuraGodTestLevel || 0;
       let angelLvl = prev.angelGodTestLevel || 0;
       let rakshasaLvl = prev.rakshasaGodTestLevel || 0;
+      let emotionLvl = prev.emotionGodTestLevel || 0;
+      let dragonLvl = prev.dragonGodTestLevel || 0;
 
       let seaAff = prev.seaGodAffinity || 0;
       let asuraAff = prev.asuraGodAffinity || 0;
       let angelAff = prev.angelGodAffinity || 0;
       let rakshasaAff = prev.rakshasaGodAffinity || 0;
+      let emotionAff = prev.emotionGodAffinity || 0;
+      let dragonAff = prev.dragonGodAffinity || 0;
 
       let godPos = prev.godPosition;
+      let hasDragonDomain = prev.hasDragonGodDomain || false;
       const artifacts = [...(prev.divineArtifacts || [])];
 
       if (test.godType === 'seagod') {
-        seaGodLvl = Math.min(9, seaGodLvl + 1);
+        seaGodLvl = Math.min(12, seaGodLvl + 1);
         seaAff = Math.min(100, seaAff + 15);
-        if (seaGodLvl === 7 && !artifacts.includes('海神三叉戟')) artifacts.push('海神三叉戟');
+        if (seaGodLvl >= 7 && !artifacts.includes('海神三叉戟')) artifacts.push('海神三叉戟');
         if (seaGodLvl >= 9) {
           godPos = '海神';
           seaAff = 100;
         }
       } else if (test.godType === 'asura') {
-        asuraLvl = Math.min(9, asuraLvl + 1);
+        asuraLvl = Math.min(12, asuraLvl + 1);
         asuraAff = Math.min(100, asuraAff + 15);
-        if (asuraLvl === 8 && !artifacts.includes('修罗魔剑')) artifacts.push('修罗魔剑');
+        if (asuraLvl >= 7 && !artifacts.includes('修罗魔剑')) artifacts.push('修罗魔剑');
         if (asuraLvl >= 9) {
           godPos = godPos === '海神' ? '海神 & 修罗双神' : '修罗神';
           asuraAff = 100;
         }
       } else if (test.godType === 'angel') {
-        angelLvl = Math.min(9, angelLvl + 1);
+        angelLvl = Math.min(12, angelLvl + 1);
         angelAff = Math.min(100, angelAff + 15);
-        if (angelLvl === 8 && !artifacts.includes('天使圣剑')) artifacts.push('天使圣剑');
+        if (angelLvl >= 7 && !artifacts.includes('天使圣剑')) artifacts.push('天使圣剑');
         if (angelLvl >= 9) {
           godPos = '天使神';
           angelAff = 100;
         }
       } else if (test.godType === 'rakshasa') {
-        rakshasaLvl = Math.min(9, rakshasaLvl + 1);
+        rakshasaLvl = Math.min(12, rakshasaLvl + 1);
         rakshasaAff = Math.min(100, rakshasaAff + 15);
-        if (rakshasaLvl === 8 && !artifacts.includes('罗刹魔镰')) artifacts.push('罗刹魔镰');
+        if (rakshasaLvl >= 7 && !artifacts.includes('罗刹魔镰')) artifacts.push('罗刹魔镰');
         if (rakshasaLvl >= 9) {
           godPos = '罗刹神';
           rakshasaAff = 100;
         }
+      } else if (test.godType === 'emotion') {
+        emotionLvl = Math.min(12, emotionLvl + 1);
+        emotionAff = Math.min(100, emotionAff + 15);
+        if (emotionLvl >= 7 && !artifacts.includes('永恒之眼')) artifacts.push('永恒之眼');
+        if (emotionLvl >= 9) {
+          godPos = '情绪之神';
+          emotionAff = 100;
+        }
+      } else if (test.godType === 'dragongod') {
+        dragonLvl = Math.min(12, dragonLvl + 1);
+        dragonAff = Math.min(100, dragonAff + 15);
+        if (dragonLvl >= 7 && !artifacts.includes('龙神枪')) artifacts.push('龙神枪');
+        if (dragonLvl >= 9) {
+          godPos = '至高龙神';
+          dragonAff = 100;
+          hasDragonDomain = true;
+        }
       }
 
-      showToast(`⚡ 神考通过！【${test.title}】完成！神性亲和度提升！`, 'success');
+      showToast(`⚡ 神考通过！【${test.title}】完成！神性亲和度提升！获得 3 点神源点！`, 'success');
 
       return {
         ...prev,
@@ -406,12 +429,70 @@ export default function App() {
         asuraGodTestLevel: asuraLvl,
         angelGodTestLevel: angelLvl,
         rakshasaGodTestLevel: rakshasaLvl,
+        emotionGodTestLevel: emotionLvl,
+        dragonGodTestLevel: dragonLvl,
         seaGodAffinity: seaAff,
         asuraGodAffinity: asuraAff,
         angelGodAffinity: angelAff,
         rakshasaGodAffinity: rakshasaAff,
+        emotionGodAffinity: emotionAff,
+        dragonGodAffinity: dragonAff,
+        hasDragonGodDomain: hasDragonDomain,
         godPosition: godPos,
-        divineArtifacts: artifacts
+        divineArtifacts: artifacts,
+        divineSourcePoints: (prev.divineSourcePoints || 0) + 3
+      };
+    });
+  };
+
+  // Divine Talent Upgrade
+  const handleUpgradeGodTalent = (godType: GodType, talentId: string) => {
+    setPlayer(prev => {
+      const pts = prev.divineSourcePoints || 0;
+      if (pts <= 0) return prev;
+
+      const currentTalents = prev.divineTalents || {};
+      const godMap = currentTalents[godType] || {};
+      const currentRank = godMap[talentId] || 0;
+
+      const updatedGodMap = {
+        ...godMap,
+        [talentId]: currentRank + 1
+      };
+
+      const updatedTalents = {
+        ...currentTalents,
+        [godType]: updatedGodMap
+      };
+
+      showToast(`⚡ 点亮神术！【${godType}】神效属性得到升阶！`, 'success');
+
+      return {
+        ...prev,
+        divineSourcePoints: pts - 1,
+        divineTalents: updatedTalents
+      };
+    });
+  };
+
+  // Divine Talent Reset
+  const handleResetGodTalents = (godType: GodType) => {
+    setPlayer(prev => {
+      const currentTalents = prev.divineTalents || {};
+      const spent = getSpentPointsInGodTree(godType, currentTalents);
+      if (spent <= 0) return prev;
+
+      const updatedTalents = {
+        ...currentTalents,
+        [godType]: {}
+      };
+
+      showToast(`🔄 重置神树成功，返还 ${spent} 点神源！`, 'info');
+
+      return {
+        ...prev,
+        divineSourcePoints: (prev.divineSourcePoints || 0) + spent,
+        divineTalents: updatedTalents
       };
     });
   };
@@ -667,6 +748,7 @@ export default function App() {
                     showToast('形象幻化成功！', 'success');
                   }}
                   onNavigateToGuide={() => setCurrentView('guide')}
+                  onNavigateToTrials={() => setCurrentView('seagod')}
                   onUpdatePlayer={(updater) => setPlayer(updater)}
                   onOpenMeditation={() => {
                     setIsMeditationOpen(true);
@@ -813,6 +895,8 @@ export default function App() {
                   player={player}
                   onInitiateGodBossCombat={handleInitiateGodBossCombat}
                   onCompleteGodTestDirectly={handleCompleteGodTestDirectly}
+                  onUpgradeGodTalent={handleUpgradeGodTalent}
+                  onResetGodTalents={handleResetGodTalents}
                 />
               )}
 

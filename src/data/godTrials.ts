@@ -1,7 +1,7 @@
-export type GodType = 'seagod' | 'asura' | 'angel' | 'rakshasa';
+export type GodType = 'seagod' | 'asura' | 'angel' | 'rakshasa' | 'emotion' | 'dragongod';
 
 export interface GodTest {
-  level: number; // 1 to 9
+  level: number; // 1 to 12
   godType: GodType;
   title: string;
   name: string;
@@ -180,6 +180,49 @@ export const SEA_GOD_TESTS: GodTest[] = [
     domainUnlocked: '海神领域',
     artifactUnlocked: '海神三叉戟',
     specialChallengeType: 'godhood'
+  },
+  {
+    level: 10,
+    godType: 'seagod',
+    title: '海神第十考 (神王级)',
+    name: '星域远古龙皇 · 镇压汪洋虚空',
+    description: '深入神界汪洋边界，对决太古深海星域龙皇，破灭虚空海啸，重塑海洋星云法则！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 15000000,
+    rewardItemName: '瀚海神威限界突破 · 攻击+35% / 魂力上限+500',
+    specialChallengeType: 'boss',
+    bossName: '太古星域深海龙皇',
+    bossTitle: '神界星域无上龙尊',
+    bossHp: 320000,
+    bossAtk: 4500,
+    bossDef: 2800
+  },
+  {
+    level: 11,
+    godType: 'seagod',
+    title: '海神第十一考 (神王级)',
+    name: '万流归宗 · 凝聚诸天海洋信仰神力',
+    description: '引动斗罗星与神界亿万汪洋万灵信仰海潮，将神海意志灌注于神核识海！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 20000000,
+    rewardItemName: '解锁【万流归宗】至高神威 · 全属性提升50%',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 12,
+    godType: 'seagod',
+    title: '海神第十二考 (神王终极)',
+    name: '海神·深海灭世风暴 · 寰宇主宰',
+    description: '突破海神极限，开启【海神·灭世风暴】神王领域，成为掌管万界汪洋的至高主宰！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 50000000,
+    rewardItemName: '成就【至高神王 · 汪洋主宰波塞冬】！全技能无视神级冷却！',
+    domainUnlocked: '海神领域',
+    artifactUnlocked: '海神三叉戟',
+    specialChallengeType: 'godhood'
   }
 ];
 
@@ -317,6 +360,49 @@ export const ASURA_GOD_TESTS: GodTest[] = [
     domainUnlocked: '修罗领域',
     artifactUnlocked: '修罗魔剑',
     specialChallengeType: 'godhood'
+  },
+  {
+    level: 10,
+    godType: 'asura',
+    title: '修罗第十考 (神王级)',
+    name: '神界委员会 · 执法者至高法裁',
+    description: '引动杀戮真意镇压神界原罪违逆之神，掌管诸天万界生杀大权！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 15000000,
+    rewardItemName: '修罗执法神威 · 暴击率+30% / 杀戮伤害+50%',
+    specialChallengeType: 'boss',
+    bossName: '原罪魔神合体化身',
+    bossTitle: '神界原罪逆法则',
+    bossHp: 350000,
+    bossAtk: 4800,
+    bossDef: 2900
+  },
+  {
+    level: 11,
+    godType: 'asura',
+    title: '修罗第十一考 (神王级)',
+    name: '修罗魔剑极意 · 裁决九霄',
+    description: '万物皆可为修罗杀刃！将杀神真意融入天地万象，一剑斩断因果轮回！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 20000000,
+    rewardItemName: '解锁【修罗极意斩】· 斩击无视90%防御',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 12,
+    godType: 'asura',
+    title: '修罗第十二考 (神王终极)',
+    name: '修罗·审判天诛斩 · 寰宇主宰',
+    description: '融汇杀戮与执法的极限，斩灭一切邪妄，成就至高无上第一执法神王！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 50000000,
+    rewardItemName: '成就【至高神王 · 修罗执掌者】！全局杀戮破甲100%！',
+    domainUnlocked: '修罗领域',
+    artifactUnlocked: '修罗魔剑',
+    specialChallengeType: 'godhood'
   }
 ];
 
@@ -447,6 +533,49 @@ export const ANGEL_GOD_TESTS: GodTest[] = [
     rewardAffinity: 5,
     rewardExp: 9999999,
     rewardItemName: '成就【百级真神 · 天使神】！解锁天使圣剑审判！',
+    domainUnlocked: '天使领域',
+    artifactUnlocked: '天使圣剑',
+    specialChallengeType: 'godhood'
+  },
+  {
+    level: 10,
+    godType: 'angel',
+    title: '天使第十考 (神王级)',
+    name: '大日金阳 · 炼化寰宇邪祟',
+    description: '引动万丈太阳真火光辉，将虚空外魔与邪祟尽数焚灭，光耀诸天！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 15000000,
+    rewardItemName: '大日金阳裁决 · 神圣伤害+40% / 魔法防御+3000',
+    specialChallengeType: 'boss',
+    bossName: '外魔邪天大帝',
+    bossTitle: '黑暗虚空侵蚀者',
+    bossHp: 310000,
+    bossAtk: 4300,
+    bossDef: 2700
+  },
+  {
+    level: 11,
+    godType: 'angel',
+    title: '天使第十一考 (神王级)',
+    name: '圣光永恒 · 天使神皇翼觉醒',
+    description: '展开十二翼金阳神皇威严法相，凝聚亿万信徒光明信仰之力！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 20000000,
+    rewardItemName: '解锁【十二翼金阳神皇翼】· 受到致命伤护盾锁血3秒',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 12,
+    godType: 'angel',
+    title: '天使第十二考 (神王终极)',
+    name: '天使·大日净化斩 · 寰宇主宰',
+    description: '重塑光明至高天道，成就掌控诸天光明大日的无上大天使神皇！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 50000000,
+    rewardItemName: '成就【至高神王 · 光明主宰天使皇】！神圣伤害提高120%！',
     domainUnlocked: '天使领域',
     artifactUnlocked: '天使圣剑',
     specialChallengeType: 'godhood'
@@ -582,18 +711,414 @@ export const RAKSHASA_GOD_TESTS: GodTest[] = [
     domainUnlocked: '罗刹领域',
     artifactUnlocked: '罗刹魔镰',
     specialChallengeType: 'godhood'
+  },
+  {
+    level: 10,
+    godType: 'rakshasa',
+    title: '罗刹第十考 (神王级)',
+    name: '深渊魔皇 · 吞噬九幽极阴',
+    description: '引九幽极阴死气重筑深渊黑洞，吞噬神界违逆恶念！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 15000000,
+    rewardItemName: '罗刹魔皇诅咒 · 剧毒伤害+50% / 吸血+25%',
+    specialChallengeType: 'boss',
+    bossName: '深渊原初幽冥邪尊',
+    bossTitle: '深渊极阴魔主',
+    bossHp: 330000,
+    bossAtk: 4600,
+    bossDef: 2750
+  },
+  {
+    level: 11,
+    godType: 'rakshasa',
+    title: '罗刹第十一考 (神王级)',
+    name: '罗刹九幽镰影 · 斩灭虚妄',
+    description: '罗刹魔镰与神魂合一，一镰出，九幽寂灭，诸邪退避！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 20000000,
+    rewardItemName: '解锁【九幽寂灭连斩】· 攻击造成最大生命值百分比伤害',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 12,
+    godType: 'rakshasa',
+    title: '罗刹第十二考 (神王终极)',
+    name: '罗刹·幽冥斩仙诀 · 寰宇主宰',
+    description: '掌控深渊与幽冥极阴大道，登临至高深渊女帝神王法相！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 50000000,
+    rewardItemName: '成就【至高神王 · 幽冥死神比比东】！全局剧毒腐蚀提升100%！',
+    domainUnlocked: '罗刹领域',
+    artifactUnlocked: '罗刹魔镰',
+    specialChallengeType: 'godhood'
+  }
+];
+
+// 5. 情绪之神十二考（霍雨浩传承）
+export const EMOTION_GOD_TESTS: GodTest[] = [
+  {
+    level: 1,
+    godType: 'emotion',
+    title: '情绪第一考',
+    name: '天梦冰蚕融合 · 精神识海蜕变',
+    description: '吸收百万年天梦冰蚕魂环，开辟百万年精神识海与灵眸武魂！',
+    requirementLevel: 50,
+    stepsCount: 100,
+    rewardAffinity: 10,
+    rewardExp: 50000,
+    rewardItemName: '百万年灵眸魂环 + 精神力上限+1000',
+    specialChallengeType: 'steps'
+  },
+  {
+    level: 2,
+    godType: 'emotion',
+    title: '情绪第二考',
+    name: '冰天雪女融合 · 极寒冰帝掌控',
+    description: '融合冰碧帝皇蝎与冰天雪女雪帝魂灵，掌极致之冰！',
+    requirementLevel: 60,
+    rewardAffinity: 10,
+    rewardExp: 100000,
+    rewardItemName: '极致之冰帝皇威 · 全冰系技能伤害+50%',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 3,
+    godType: 'emotion',
+    title: '情绪第三考',
+    name: '死灵圣法神 · 亡灵天灾印记',
+    description: '得伊莱克斯死灵传承，掌握死灵天灾与净化光辉！',
+    requirementLevel: 70,
+    rewardAffinity: 10,
+    rewardExp: 200000,
+    rewardItemName: '死灵圣法神吟唱 · 召唤亡灵军团助战',
+    specialChallengeType: 'boss',
+    bossName: '深渊死灵恶皇',
+    bossTitle: '亡灵界怨邪影',
+    bossHp: 80000,
+    bossAtk: 1800,
+    bossDef: 1000
+  },
+  {
+    level: 4,
+    godType: 'emotion',
+    title: '情绪第四考',
+    name: '情绪七色之光 · 喜怒哀乐熔炼',
+    description: '熔炼喜、怒、哀、乐、爱、恶、欲七大情绪种子，凝练七彩神光！',
+    requirementLevel: 75,
+    rewardAffinity: 10,
+    rewardExp: 350000,
+    rewardItemName: '情绪七彩之光 · 控制与辅助效果+40%',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 5,
+    godType: 'emotion',
+    title: '情绪第五考',
+    name: '浩冬掌 · 三式君临天下',
+    description: '融合唐舞桐浩冬神力，自创【浩冬掌·君临天下】战技！',
+    requirementLevel: 80,
+    rewardAffinity: 10,
+    rewardExp: 500000,
+    rewardItemName: '浩冬掌战技 · 造成破防物理与精神双重打击',
+    specialChallengeType: 'boss',
+    bossName: '邪眼暴君主宰幻影',
+    bossTitle: '70万年十大凶兽',
+    bossHp: 120000,
+    bossAtk: 2600,
+    bossDef: 1500
+  },
+  {
+    level: 6,
+    godType: 'emotion',
+    title: '情绪第六考',
+    name: '击败邪眼暴君主宰 · 吸收毁灭之瞳',
+    description: '斩杀日月帝国邪眼暴君主宰，将时空之光与毁灭之瞳纳入灵眸！',
+    requirementLevel: 85,
+    rewardAffinity: 10,
+    rewardExp: 800000,
+    rewardItemName: '邪眼毁灭之瞳 · 毁灭时空射线',
+    specialChallengeType: 'boss',
+    bossName: '邪眼暴君主宰本尊',
+    bossTitle: '十大凶兽第二位',
+    bossHp: 180000,
+    bossAtk: 3400,
+    bossDef: 2000
+  },
+  {
+    level: 7,
+    godType: 'emotion',
+    title: '情绪第七考',
+    name: '拔出超神器 · 鬼雕神刀/永恒之眼',
+    description: '融合生灵之金与超神器永恒之眼，握持鬼雕神刀划破虚空！',
+    requirementLevel: 90,
+    rewardAffinity: 10,
+    rewardExp: 1200000,
+    rewardItemName: '超神器【永恒之眼】· 灵魂透视与全免控',
+    artifactUnlocked: '永恒之眼',
+    specialChallengeType: 'weapon'
+  },
+  {
+    level: 8,
+    godType: 'emotion',
+    title: '情绪第八考',
+    name: '融念冰神念考验 · 七柄神之刃',
+    description: '接受情绪之神融念冰考核，继承冰雪、火焰、自由等七柄神刃！',
+    requirementLevel: 95,
+    rewardAffinity: 15,
+    rewardExp: 2500000,
+    rewardItemName: '七柄元素神刃 · 全元素伤害+60%',
+    specialChallengeType: 'tide'
+  },
+  {
+    level: 9,
+    godType: 'emotion',
+    title: '情绪第九考',
+    name: '情绪神位融汇 · 百级情绪之神！',
+    description: '承载情绪神皇大能，百级成神！浩冬神力无双，掌管诸天七情六欲！',
+    requirementLevel: 99,
+    rewardAffinity: 5,
+    rewardExp: 9999999,
+    rewardItemName: '成就【百级真神 · 情绪之神霍雨浩】！',
+    domainUnlocked: '灵眸精神领域',
+    artifactUnlocked: '永恒之眼',
+    specialChallengeType: 'godhood'
+  },
+  {
+    level: 10,
+    godType: 'emotion',
+    title: '情绪第十考 (神王级)',
+    name: '精神识海星云 · 镇压神界风暴',
+    description: '精神识海蜕化为浩瀚宇宙星云，以情绪神威定海安邦！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 15000000,
+    rewardItemName: '星云识海印记 · 精神攻击+50% / 免疫眩晕',
+    specialChallengeType: 'boss',
+    bossName: '星元乱流狂兽皇',
+    bossTitle: '宇宙狂暴之源',
+    bossHp: 320000,
+    bossAtk: 4400,
+    bossDef: 2700
+  },
+  {
+    level: 11,
+    godType: 'emotion',
+    title: '情绪第十一考 (神王级)',
+    name: '融念冰终极传承 · 情绪神王之眼',
+    description: '将七情六欲与命运天眼完美交融，凝练神界第一精神识海！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 20000000,
+    rewardItemName: '解锁【命运天眼·超神判决】· 全技能触发灵魂爆破',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 12,
+    godType: 'emotion',
+    title: '情绪第十二考 (神王终极)',
+    name: '情绪·浩冬永恒神光 · 寰宇主宰',
+    description: '携手唐舞桐打造永恒神光，成就掌管万界情感与命运的至高神王！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 50000000,
+    rewardItemName: '成就【至高神王 · 情绪主宰霍雨浩】！全技能带有浩冬冰爆！',
+    domainUnlocked: '灵眸精神领域',
+    artifactUnlocked: '永恒之眼',
+    specialChallengeType: 'godhood'
+  }
+];
+
+// 6. 龙神十二考 (Dragon God Trials)
+export const DRAGON_GOD_TESTS: GodTest[] = [
+  {
+    level: 1,
+    godType: 'dragongod',
+    title: '龙神第一考',
+    name: '龙神血脉觉醒 · 登临 999 级龙神祭坛',
+    description: '在远古龙神九彩浩瀚神威下，顶着极其沉重的黄金龙王血脉重力，攀登龙神遗迹 999 级龙王神坛！',
+    requirementLevel: 50,
+    stepsCount: 999,
+    rewardAffinity: 5,
+    rewardExp: 60000,
+    rewardItemName: '九彩龙鳞抗性印记 + 全魂环年限+800年',
+    specialChallengeType: 'steps'
+  },
+  {
+    level: 2,
+    godType: 'dragongod',
+    title: '龙神第二考',
+    name: '龙神爪破空 · 突围十万年太古魔龙群',
+    description: '施展龙神爪摧枯拉朽之势，在星斗大森林万兽深渊中，斩灭十万年太古魔龙王！',
+    requirementLevel: 60,
+    rewardAffinity: 5,
+    rewardExp: 100000,
+    rewardItemName: '龙神爪撕裂感悟 + 物理破甲+30%',
+    specialChallengeType: 'boss',
+    bossName: '太古魔龙王 · 龙魔尊',
+    bossTitle: '十万年太古龙族霸主',
+    bossHp: 50000,
+    bossAtk: 1200,
+    bossDef: 700
+  },
+  {
+    level: 3,
+    godType: 'dragongod',
+    title: '龙神第三考',
+    name: '金银双龙合体 · 黄金龙枪与白银神枪交融',
+    description: '承受金龙王极致力量与银龙王九大元素风暴交织冲刷，淬炼不灭九彩龙躯！',
+    requirementLevel: 70,
+    rewardAffinity: 10,
+    rewardExp: 180000,
+    rewardItemName: '金银双龙变 · 力量/防御/元素掌控全面+35%',
+    specialChallengeType: 'tide'
+  },
+  {
+    level: 4,
+    godType: 'dragongod',
+    title: '龙神第四考',
+    name: '试炼九大龙王神魂 · 斩胜山龙王与光明龙王',
+    description: '深入龙族墓地真意，承受山龙王沉重如天与光明龙王圣光裁决的双重合击考验！',
+    requirementLevel: 75,
+    rewardAffinity: 10,
+    rewardExp: 260000,
+    rewardItemName: '山龙王厚土护体 + 光明龙王圣剑印记',
+    specialChallengeType: 'boss',
+    bossName: '山龙王与光明龙王神魂',
+    bossTitle: '龙族九大龙王朝圣神魂',
+    bossHp: 80000,
+    bossAtk: 1800,
+    bossDef: 1100
+  },
+  {
+    level: 5,
+    godType: 'dragongod',
+    title: '龙神第五考',
+    name: '龙神核心聚变 · 熔炼九彩元素法则',
+    description: '将水、火、土、风、光明、黑暗、空间等九大龙族元素法则与金龙王极致血脉融合，凝练龙神核！',
+    requirementLevel: 80,
+    rewardAffinity: 15,
+    rewardExp: 400000,
+    rewardItemName: '龙神核初凝 · 技能冷却缩减20% / 全元素伤害+30%',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 6,
+    godType: 'dragongod',
+    title: '龙神第六考',
+    name: '镇压狂暴心魔 · 对决金龙王神核分身',
+    description: '正面对决神界破灭之源【金龙王狂暴神核分身】，打破无尽毁灭意念，拯救神魔识海！',
+    requirementLevel: 85,
+    rewardAffinity: 20,
+    rewardExp: 750000,
+    rewardItemName: '黄金龙体九变 · 亲和度达到85% / 暴击率+25%',
+    specialChallengeType: 'boss',
+    bossName: '金龙王狂暴分身（准神级）',
+    bossTitle: '神界毁灭与极致力量化身',
+    bossHp: 180000,
+    bossAtk: 3500,
+    bossDef: 2000
+  },
+  {
+    level: 7,
+    godType: 'dragongod',
+    title: '龙神第七考',
+    name: '拔出超神器 · 龙神枪',
+    description: '以万龙至尊血脉与九彩龙神威压，拔出重达十万八千斤的远古第一破坏神器【龙神枪】！',
+    requirementLevel: 90,
+    rewardAffinity: 15,
+    rewardExp: 1200000,
+    rewardItemName: '执掌超神器【龙神枪】· 解锁龙神怒与龙神爪爆裂连击！',
+    artifactUnlocked: '龙神枪',
+    specialChallengeType: 'weapon'
+  },
+  {
+    level: 8,
+    godType: 'dragongod',
+    title: '龙神第八考',
+    name: '九彩万龙朝圣 · 重铸九彩九万年/百万年神级龙环',
+    description: '召集斗罗星与龙界万龙归宗，将周身魂环全数重铸升级为九彩神级龙环！',
+    requirementLevel: 95,
+    rewardAffinity: 15,
+    rewardExp: 2500000,
+    rewardItemName: '全套九彩神级龙环 + 龙神威压全场敌方减速30%',
+    specialChallengeType: 'boss',
+    bossName: '兽神帝天与紫姬合体龙皇',
+    bossTitle: '89万年黑龙王至尊',
+    bossHp: 280000,
+    bossAtk: 4200,
+    bossDef: 2600
+  },
+  {
+    level: 9,
+    godType: 'dragongod',
+    title: '龙神第九考',
+    name: '至高龙神降临 · 融汇金银成就百级至高龙神！',
+    description: '打破一切凡人与诸神界限，融合龙神神位，九彩龙神铠降临，成为宇宙诸天龙族至高主宰！',
+    requirementLevel: 99,
+    rewardAffinity: 5,
+    rewardExp: 9999999,
+    rewardItemName: '成就【百级真神 · 至高龙神】！全技能带有龙神九彩灭世！',
+    domainUnlocked: '龙神领域',
+    artifactUnlocked: '龙神枪',
+    specialChallengeType: 'godhood'
+  },
+  {
+    level: 10,
+    godType: 'dragongod',
+    title: '龙神第十考 (神王级)',
+    name: '镇压深渊位面 · 破灭深渊圣君',
+    description: '手握龙神枪突入深渊108层，一枪破灭深渊圣君，吸收深渊位面能量巩固龙界！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 18000000,
+    rewardItemName: '深渊破灭印记 · 全吸血+25% / 破甲+50%',
+    specialChallengeType: 'boss',
+    bossName: '深渊圣君（神王级）',
+    bossTitle: '深渊位面至高主宰',
+    bossHp: 400000,
+    bossAtk: 5200,
+    bossDef: 3200
+  },
+  {
+    level: 11,
+    godType: 'dragongod',
+    title: '龙神第十一考 (神王级)',
+    name: '龙界九彩神星聚变 · 宇宙万龙意志',
+    description: '将龙界演化为九彩神星，凝聚宇宙诸天维度万千龙族之魂！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 25000000,
+    rewardItemName: '解锁【万龙朝圣】至高神威 · 无视一切眩晕与控制',
+    specialChallengeType: 'meditation'
+  },
+  {
+    level: 12,
+    godType: 'dragongod',
+    title: '龙神第十二考 (神王终极)',
+    name: '至高龙神·九彩龙皇灭世波 · 宇宙第一神王',
+    description: '融汇金银龙王与九大龙王至高本源，成就掌控宇宙万物毁灭与创生的第一神王！',
+    requirementLevel: 100,
+    rewardAffinity: 5,
+    rewardExp: 60000000,
+    rewardItemName: '成就【至高神王 · 龙神】！解锁龙神九彩灭世爆破！',
+    domainUnlocked: '龙神领域',
+    artifactUnlocked: '龙神枪',
+    specialChallengeType: 'godhood'
   }
 ];
 
 export const ALL_GOD_INHERITANCES: GodInheritanceInfo[] = [
   {
     id: 'seagod',
-    name: '海神九考',
+    name: '海神十二考',
     title: '浩瀚汪洋主宰 · 海神波塞冬神位传承',
     element: 'water',
     artifactName: '海神三叉戟',
     domainName: '海神领域',
-    description: '统御浩瀚诸天汪洋神力！完成海神九考，拔出十万八千斤海神三叉戟，重铸百万年神级魂环，登临百级神祇之巅！',
+    description: '统御浩瀚诸天汪洋神力！完成海神十二考，拔出十万八千斤海神三叉戟，重铸百万年神级魂环，登临神王主宰之巅！',
     colorScheme: {
       bannerBg: 'from-blue-950/90 via-slate-900 to-slate-900',
       badgeBg: 'bg-blue-950/80 border-blue-500/50 text-cyan-300',
@@ -606,7 +1131,7 @@ export const ALL_GOD_INHERITANCES: GodInheritanceInfo[] = [
   },
   {
     id: 'asura',
-    name: '修罗九考',
+    name: '修罗十二考',
     title: '神界五大神王之首 · 修罗执法神传承',
     element: 'dark',
     artifactName: '修罗魔剑',
@@ -624,12 +1149,12 @@ export const ALL_GOD_INHERITANCES: GodInheritanceInfo[] = [
   },
   {
     id: 'angel',
-    name: '天使九考',
+    name: '天使十二考',
     title: '光明与大日主宰 · 六翼天使神位传承',
     element: 'light',
     artifactName: '天使圣剑',
     domainName: '天使领域',
-    description: '执掌太阳真火与光明神圣之力！登临千级云阶，拔出天使圣剑，金身重塑，成就百级天使真神！',
+    description: '执掌太阳真火与光明神圣之力！登临千级云阶，拔出天使圣剑，金身重塑，成就百级天使神王！',
     colorScheme: {
       bannerBg: 'from-amber-950/90 via-slate-900 to-slate-900',
       badgeBg: 'bg-yellow-950/80 border-yellow-500/50 text-yellow-300',
@@ -642,12 +1167,12 @@ export const ALL_GOD_INHERITANCES: GodInheritanceInfo[] = [
   },
   {
     id: 'rakshasa',
-    name: '罗刹九考',
+    name: '罗刹十二考',
     title: '深渊九幽死神 · 罗刹神位传承',
     element: 'poison',
     artifactName: '罗刹魔镰',
     domainName: '罗刹领域',
-    description: '执掌深渊极阴与九幽死气！吞噬极阴怨念，化解双生武魂冲突，执掌罗刹魔镰，成就斗罗绝世女帝！',
+    description: '执掌深渊极阴与九幽死气！吞噬极阴怨念，化解双生武魂冲突，执掌罗刹魔镰，成就斗罗绝世神王女帝！',
     colorScheme: {
       bannerBg: 'from-purple-950/90 via-slate-900 to-slate-900',
       badgeBg: 'bg-purple-950/80 border-purple-500/50 text-purple-300',
@@ -657,6 +1182,42 @@ export const ALL_GOD_INHERITANCES: GodInheritanceInfo[] = [
       buttonBg: 'from-purple-600 via-fuchsia-600 to-indigo-600 hover:from-purple-500 hover:to-fuchsia-500 text-white'
     },
     tests: RAKSHASA_GOD_TESTS
+  },
+  {
+    id: 'emotion',
+    name: '情绪十二考',
+    title: '灵眸浩冬主宰 · 情绪之神霍雨浩传承',
+    element: 'ice',
+    artifactName: '永恒之眼',
+    domainName: '灵眸精神领域',
+    description: '承载融念冰情绪神位！熔炼七情六欲与极冰天眼，掌控死灵法术与浩冬神光，登临情绪神王主宰！',
+    colorScheme: {
+      bannerBg: 'from-sky-950/90 via-slate-900 to-slate-900',
+      badgeBg: 'bg-sky-950/80 border-sky-500/50 text-sky-300',
+      border: 'border-sky-500/40',
+      accentText: 'text-sky-400',
+      glowColor: 'rgba(56,189,248,0.3)',
+      buttonBg: 'from-sky-500 via-teal-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white'
+    },
+    tests: EMOTION_GOD_TESTS
+  },
+  {
+    id: 'dragongod',
+    name: '龙神十二考',
+    title: '万龙之祖至高神皇 · 龙神蓝轩宇/唐舞麟传承',
+    element: 'light',
+    artifactName: '龙神枪',
+    domainName: '龙神领域',
+    description: '融合金龙王毁灭力量与银龙王九大元素法则！拔出超神器龙神枪，凝聚九彩龙神核，统御诸天万界万龙朝圣，成就宇宙第一至高龙神！',
+    colorScheme: {
+      bannerBg: 'from-amber-950/90 via-yellow-950/80 to-slate-900',
+      badgeBg: 'bg-amber-950/90 border-amber-400/60 text-amber-200',
+      border: 'border-amber-400/50',
+      accentText: 'text-amber-300',
+      glowColor: 'rgba(245,158,11,0.4)',
+      buttonBg: 'from-amber-500 via-yellow-400 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black'
+    },
+    tests: DRAGON_GOD_TESTS
   }
 ];
 

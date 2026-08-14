@@ -1,26 +1,36 @@
 import React, { useState } from 'react';
 import { Player, CombatEntity } from '../types/game';
-import { ALL_GOD_INHERITANCES, GodInheritanceInfo, GodTest, GodType } from '../data/godTrials';
+import { ALL_GOD_INHERITANCES, GodInheritanceInfo, GodTest, GodType, SEA_GOD_TESTS } from '../data/godTrials';
 import { SoundEngine } from '../utils/audio';
 import confetti from 'canvas-confetti';
+import { GodTrialReplayModal } from './GodTrialReplayModal';
+import { GodTalentTreeView } from './GodTalentTreeView';
 import { 
   Waves, Swords, Sun, Skull, Sparkles, Award, Shield, 
-  Crown, CheckCircle2, Lock, Flame, Zap, ArrowRight, Compass
+  Crown, CheckCircle2, Lock, Flame, Zap, ArrowRight, Compass,
+  History, Play, RotateCcw, Filter, GitBranch
 } from 'lucide-react';
 
 interface DivineGodTrialsViewProps {
   player: Player;
   onInitiateGodBossCombat: (test: GodTest, entity: CombatEntity) => void;
   onCompleteGodTestDirectly: (test: GodTest) => void;
+  onUpgradeGodTalent: (godType: GodType, talentId: string) => void;
+  onResetGodTalents: (godType: GodType) => void;
 }
 
 export const DivineGodTrialsView: React.FC<DivineGodTrialsViewProps> = ({
   player,
   onInitiateGodBossCombat,
-  onCompleteGodTestDirectly
+  onCompleteGodTestDirectly,
+  onUpgradeGodTalent,
+  onResetGodTalents
 }) => {
+  const [mainTab, setMainTab] = useState<'trials' | 'talents'>('trials');
   const [selectedGodId, setSelectedGodId] = useState<GodType>('seagod');
   const [isProcessingChallenge, setIsProcessingChallenge] = useState(false);
+  const [selectedReplayTest, setSelectedReplayTest] = useState<GodTest | null>(null);
+  const [historyGodFilter, setHistoryGodFilter] = useState<'all' | GodType>('all');
 
   const currentInheritance = ALL_GOD_INHERITANCES.find(g => g.id === selectedGodId) || ALL_GOD_INHERITANCES[0];
 
@@ -31,6 +41,8 @@ export const DivineGodTrialsView: React.FC<DivineGodTrialsViewProps> = ({
       case 'asura': return player.asuraGodTestLevel || 0;
       case 'angel': return player.angelGodTestLevel || 0;
       case 'rakshasa': return player.rakshasaGodTestLevel || 0;
+      case 'emotion': return player.emotionGodTestLevel || 0;
+      case 'dragongod': return player.dragonGodTestLevel || 0;
       default: return 0;
     }
   };
@@ -42,6 +54,8 @@ export const DivineGodTrialsView: React.FC<DivineGodTrialsViewProps> = ({
       case 'asura': return player.asuraGodAffinity || 0;
       case 'angel': return player.angelGodAffinity || 0;
       case 'rakshasa': return player.rakshasaGodAffinity || 0;
+      case 'emotion': return player.emotionGodAffinity || 0;
+      case 'dragongod': return player.dragonGodAffinity || 0;
       default: return 0;
     }
   };
@@ -52,7 +66,8 @@ export const DivineGodTrialsView: React.FC<DivineGodTrialsViewProps> = ({
   const activeTest = currentInheritance.tests.find(t => t.level === currentTestLevel + 1) || 
     currentInheritance.tests[currentInheritance.tests.length - 1];
 
-  const isAllPassed = currentTestLevel >= 9;
+  const maxLevel = currentInheritance.tests.length;
+  const isAllPassed = currentTestLevel >= maxLevel;
 
   const handleStartChallenge = (test: GodTest) => {
     if (player.level < test.requirementLevel) {
@@ -150,76 +165,126 @@ export const DivineGodTrialsView: React.FC<DivineGodTrialsViewProps> = ({
       case 'asura': return <Swords className="w-5 h-5 text-red-500" />;
       case 'angel': return <Sun className="w-5 h-5 text-yellow-400" />;
       case 'rakshasa': return <Skull className="w-5 h-5 text-purple-400" />;
+      case 'emotion': return <Sparkles className="w-5 h-5 text-sky-400" />;
+      case 'dragongod': return <Flame className="w-5 h-5 text-amber-400" />;
     }
   };
 
   return (
     <div className="space-y-6">
-      
-      {/* 4 GOD INHERITANCES SELECTOR TABS */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-400 tracking-wider">选择神祇传承（四大至高神考）</span>
-          <span className="text-xs text-amber-400 font-semibold flex items-center gap-1">
-            <Crown className="w-3.5 h-3.5" />
-            当前神位：{player.godPosition || '尚未成就百级神位'}
-          </span>
+      {/* TOP NAVIGATION SUB-TABS: Divine God Trials vs Divine Talent Tree */}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              SoundEngine.playClick();
+              setMainTab('trials');
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm border transition-all cursor-pointer ${
+              mainTab === 'trials'
+                ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-amber-400" />
+            神祇考核 (十二神考)
+          </button>
+
+          <button
+            onClick={() => {
+              SoundEngine.playClick();
+              setMainTab('talents');
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm border transition-all cursor-pointer ${
+              mainTab === 'talents'
+                ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <GitBranch className="w-4 h-4 text-amber-400" />
+            神祇天赋树
+            {player.divineSourcePoints && player.divineSourcePoints > 0 ? (
+              <span className="ml-1 text-xs px-2 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black animate-bounce">
+                +{player.divineSourcePoints}
+              </span>
+            ) : null}
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ALL_GOD_INHERITANCES.map(god => {
-            const isSelected = selectedGodId === god.id;
-            const lvl = getGodTestLevel(god.id);
-            const affinity = getGodAffinity(god.id);
-            const isFinished = lvl >= 9;
-
-            return (
-              <button
-                key={god.id}
-                onClick={() => {
-                  SoundEngine.playClick();
-                  setSelectedGodId(god.id);
-                }}
-                className={`p-4 rounded-2xl text-left border transition-all relative overflow-hidden ${
-                  isSelected
-                    ? `bg-slate-800 ${god.colorScheme.border} shadow-[0_0_20px_${god.colorScheme.glowColor}]`
-                    : 'bg-slate-900/90 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {getGodIcon(god.id)}
-                    <span className={`font-black text-sm ${isSelected ? god.colorScheme.accentText : 'text-slate-200'}`}>
-                      {god.name}
-                    </span>
-                  </div>
-                  {isFinished ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
-                      百级真神
-                    </span>
-                  ) : (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-950 text-slate-300 border border-slate-800">
-                      已过 {lvl}/9 考
-                    </span>
-                  )}
-                </div>
-
-                <div className="text-[11px] text-slate-400 mt-2 truncate">
-                  亲和度: <strong className={god.colorScheme.accentText}>{affinity}%</strong> · 超神器: {god.artifactName}
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-slate-950 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                  <div
-                    className={`h-full bg-gradient-to-r ${god.colorScheme.buttonBg}`}
-                    style={{ width: `${(lvl / 9) * 100}%` }}
-                  />
-                </div>
-              </button>
-            );
-          })}
+        <div className="text-xs text-amber-400 font-semibold flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+          <Crown className="w-3.5 h-3.5" />
+          当前神位：<span className="text-amber-300 font-bold">{player.godPosition || '未成就百级神位'}</span>
         </div>
       </div>
+
+      {mainTab === 'talents' ? (
+        <GodTalentTreeView
+          player={player}
+          onUpgradeTalent={onUpgradeGodTalent}
+          onResetTalents={onResetGodTalents}
+        />
+      ) : (
+        <>
+          {/* GOD INHERITANCES SELECTOR TABS */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-400 tracking-wider">选择神祇传承（至高神位）</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {ALL_GOD_INHERITANCES.map(god => {
+                const isSelected = selectedGodId === god.id;
+                const lvl = getGodTestLevel(god.id);
+                const affinity = getGodAffinity(god.id);
+                const isFinished = lvl >= 12;
+
+                return (
+                  <button
+                    key={god.id}
+                    onClick={() => {
+                      SoundEngine.playClick();
+                      setSelectedGodId(god.id);
+                    }}
+                    className={`p-3.5 rounded-2xl text-left border transition-all relative overflow-hidden ${
+                      isSelected
+                        ? `bg-slate-800 ${god.colorScheme.border} shadow-[0_0_20px_${god.colorScheme.glowColor}]`
+                        : 'bg-slate-900/90 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        {getGodIcon(god.id)}
+                        <span className={`font-black text-xs ${isSelected ? god.colorScheme.accentText : 'text-slate-200'}`}>
+                          {god.name}
+                        </span>
+                      </div>
+                      {isFinished ? (
+                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
+                          神王
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950 text-slate-300 border border-slate-800">
+                          {lvl}/12考
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 mt-2 truncate">
+                      亲和: <strong className={god.colorScheme.accentText}>{affinity}%</strong>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="w-full bg-slate-950 h-1.5 rounded-full mt-2 overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${god.colorScheme.buttonBg}`}
+                        style={{ width: `${(lvl / 12) * 100}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
       {/* GOD BANNER */}
       <div className={`bg-gradient-to-r ${currentInheritance.colorScheme.bannerBg} border ${currentInheritance.colorScheme.border} rounded-3xl p-6 relative overflow-hidden shadow-2xl transition-all`}>
@@ -420,11 +485,168 @@ export const DivineGodTrialsView: React.FC<DivineGodTrialsViewProps> = ({
                     奖励: {test.rewardItemName}
                   </div>
                 </div>
+
+                {isCompleted && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      SoundEngine.playClick();
+                      setSelectedReplayTest(test);
+                    }}
+                    className="mt-2.5 w-full py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-300 text-[11px] font-black flex items-center justify-center gap-1.5 transition-all shadow-md group active:scale-95"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-180 transition-transform duration-500" />
+                    重播神光传承特效
+                  </button>
+                )}
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* HISTORICAL COMPLETED DIVINE TRIALS SCROLLABLE RECORDS GALLERY */}
+      {(() => {
+        const allCompletedRecords = ALL_GOD_INHERITANCES.flatMap(god => {
+          const lvl = getGodTestLevel(god.id);
+          return god.tests.filter(t => t.level <= lvl).map(test => ({ test, god }));
+        });
+
+        const filteredCompletedRecords = historyGodFilter === 'all'
+          ? allCompletedRecords
+          : allCompletedRecords.filter(r => r.god.id === historyGodFilter);
+
+        return (
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-amber-400" />
+                <h3 className="font-black text-base text-slate-100">
+                  历史神考通关典藏画卷
+                </h3>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-bold">
+                  已通关 {allCompletedRecords.length} 项
+                </span>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+                <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <button
+                  onClick={() => { SoundEngine.playClick(); setHistoryGodFilter('all'); }}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 ${
+                    historyGodFilter === 'all'
+                      ? 'bg-amber-500 text-slate-950 shadow-md'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  全部 ({allCompletedRecords.length})
+                </button>
+                {ALL_GOD_INHERITANCES.map(god => {
+                  const count = allCompletedRecords.filter(r => r.god.id === god.id).length;
+                  return (
+                    <button
+                      key={god.id}
+                      onClick={() => { SoundEngine.playClick(); setHistoryGodFilter(god.id); }}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 border ${
+                        historyGodFilter === god.id
+                          ? `${god.colorScheme.badgeBg} border-amber-400/80 shadow-md`
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {god.name.slice(0, 3)} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Scrollable Records Container */}
+            {filteredCompletedRecords.length > 0 ? (
+              <div className="max-h-80 overflow-y-auto pr-1.5 space-y-2.5 custom-scrollbar">
+                {filteredCompletedRecords.map(({ test, god }) => (
+                  <div
+                    key={`${god.id}_${test.level}`}
+                    onClick={() => {
+                      SoundEngine.playClick();
+                      setSelectedReplayTest(test);
+                    }}
+                    className={`p-4 rounded-2xl border bg-slate-950/80 border-slate-800/80 hover:${god.colorScheme.border} hover:bg-slate-900 transition-all cursor-pointer group flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md relative overflow-hidden`}
+                  >
+                    <div className="flex items-start md:items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${god.colorScheme.badgeBg}`}>
+                        {getGodIcon(god.id)}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${god.colorScheme.badgeBg}`}>
+                            {god.name} · 第 {test.level} 考
+                          </span>
+                          <h4 className="font-bold text-xs text-slate-200 group-hover:text-amber-300 transition-colors">
+                            {test.title}
+                          </h4>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                          {test.name}
+                        </p>
+
+                        <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-3">
+                          <span>获得奖励: <strong className="text-amber-400">{test.rewardItemName}</strong></span>
+                          <span>亲和度: <strong className="text-cyan-400">+{test.rewardAffinity}%</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          SoundEngine.playClick();
+                          setSelectedReplayTest(test);
+                        }}
+                        className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all shadow-md group-hover:scale-105 bg-gradient-to-r ${god.colorScheme.buttonBg}`}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        重播神效
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 space-y-3">
+                <History className="w-10 h-10 text-slate-600 mx-auto" />
+                <p className="text-xs text-slate-400">
+                  尚无符合筛选条件的历史已通关神考记录！
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  可以通过上方的神考考核进行挑战，或点击下方按钮演示预览海神第一考传承特效：
+                </p>
+                <button
+                  onClick={() => {
+                    SoundEngine.playClick();
+                    setSelectedReplayTest(SEA_GOD_TESTS[0]);
+                  }}
+                  className="px-5 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-200 text-xs font-bold inline-flex items-center gap-2 transition-all shadow-lg"
+                >
+                  <RotateCcw className="w-4 h-4 text-cyan-400" />
+                  演示预览神考传承特效（海神第一考）
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+      </>
+      )}
+
+      {/* GOD TRIAL REPLAY MODAL */}
+      <GodTrialReplayModal
+        test={selectedReplayTest}
+        onClose={() => setSelectedReplayTest(null)}
+      />
 
     </div>
   );

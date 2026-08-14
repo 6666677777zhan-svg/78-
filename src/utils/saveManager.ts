@@ -10,6 +10,7 @@ import { INITIAL_SOUL_TOOLS } from '../data/soulTools';
 import { INITIAL_DOULUO4_COMPANIONS } from '../data/douluo4Companions';
 import { createDefaultAutoBattleStrategy } from '../data/afkStrategyData';
 import { createDefaultInterstellarState } from '../data/interstellarData';
+import { calculateAllDivineTalentBonuses } from '../data/godTalents';
 
 const SAVE_KEY = 'douluo_dalu_rpg_save_v1';
 
@@ -53,16 +54,20 @@ export function createDefaultPlayer(
       '天锻神金': 0
     },
 
-    // Divine God Trials (四大神考)
+    // Divine God Trials (六大神考)
     seaGodTestLevel: 0,
     asuraGodTestLevel: 0,
     angelGodTestLevel: 0,
     rakshasaGodTestLevel: 0,
+    emotionGodTestLevel: 0,
+    dragonGodTestLevel: 0,
 
     seaGodAffinity: 0,
     asuraGodAffinity: 0,
     angelGodAffinity: 0,
     rakshasaGodAffinity: 0,
+    emotionGodAffinity: 0,
+    dragonGodAffinity: 0,
 
     // Divine Domains (至高领域)
     hasKillingGodDomain: false,
@@ -72,11 +77,14 @@ export function createDefaultPlayer(
     hasAsuraDomain: false,
     hasRakshasaDomain: false,
     hasDeathDomain: false,
+    hasDragonGodDomain: false,
     activeDomain: null,
 
     // Divine Position & Artifacts (神位与超神器)
     godPosition: null,
     divineArtifacts: [],
+    divineSourcePoints: 0,
+    divineTalents: {},
 
     martialSouls,
     activeSoulIndex: 0,
@@ -164,35 +172,35 @@ export function calculatePlayerStats(player: Player): PlayerStats {
   let poisonResist = 0;
   let maxSoulPower = 100 + player.level * 25;
 
-  // Tang Sect internal skill buffs
+  // Tang Sect internal skill buffs (balanced scaling)
   if (player.tangSectSkills) {
     const xuantianLvl = player.tangSectSkills.xuantian?.level || 1;
-    maxSoulPower += xuantianLvl * 30;
-    maxHp += xuantianLvl * 150;
+    maxSoulPower += xuantianLvl * 15;
+    maxHp += xuantianLvl * 50;
 
     const zijiLvl = player.tangSectSkills.ziji?.level || 1;
-    critRate += zijiLvl * 4;
-    critDmg += zijiLvl * 10;
+    critRate += zijiLvl * 1.5;
+    critDmg += zijiLvl * 4;
 
     const guiyingLvl = player.tangSectSkills.guiying?.level || 1;
-    speed += guiyingLvl * 5;
+    speed += guiyingLvl * 2;
 
     const xuanyuLvl = player.tangSectSkills.xuanyu?.level || 1;
-    def += xuanyuLvl * 15;
-    poisonResist += xuanyuLvl * 20;
+    def += xuanyuLvl * 6;
+    poisonResist += xuanyuLvl * 10;
 
     const kongheLvl = player.tangSectSkills.konghe?.level || 1;
-    atk += kongheLvl * 12;
+    atk += kongheLvl * 5;
   }
 
-  // Soul Rings bonuses
+  // Soul Rings bonuses (toned down from extreme stacking)
   activeSoul.skills.forEach((skill) => {
-    const bonus = Math.floor(skill.ringYears / 500);
-    maxHp += bonus * 30;
-    atk += bonus * 4;
-    def += bonus * 3;
-    speed += Math.floor(bonus * 0.3);
-    maxSoulPower += 15;
+    const bonus = Math.floor(skill.ringYears / 1000);
+    maxHp += bonus * 12;
+    atk += Math.floor(bonus * 1.8);
+    def += Math.floor(bonus * 1.2);
+    speed += Math.floor(bonus * 0.15);
+    maxSoulPower += 8;
   });
 
   // Soul Bones bonuses
@@ -363,15 +371,27 @@ export function calculatePlayerStats(player: Player): PlayerStats {
     }
   }
 
-  // Divine Artifacts bonuses
+  // Divine Artifacts bonuses (balanced)
   if (player.divineArtifacts && player.divineArtifacts.length > 0) {
     player.divineArtifacts.forEach(() => {
-      atk += 600;
-      def += 400;
-      maxHp += 3500;
-      penetration += 15;
-      critRate += 10;
+      atk += 160;
+      def += 100;
+      maxHp += 850;
+      penetration += 5;
+      critRate += 3;
     });
+  }
+
+  // Divine Talent Trees Bonuses (神祇天赋树加成)
+  if (player.divineTalents) {
+    const divineBonuses = calculateAllDivineTalentBonuses(player.divineTalents);
+    if (divineBonuses.attackPercent > 0) atk = Math.floor(atk * (1 + (divineBonuses.attackPercent * 0.6) / 100));
+    if (divineBonuses.hpPercent > 0) maxHp = Math.floor(maxHp * (1 + (divineBonuses.hpPercent * 0.6) / 100));
+    if (divineBonuses.defPercent > 0) def = Math.floor(def * (1 + (divineBonuses.defPercent * 0.6) / 100));
+    if (divineBonuses.critRate > 0) critRate += Math.floor(divineBonuses.critRate * 0.6);
+    if (divineBonuses.critDamage > 0) critDmg += Math.floor(divineBonuses.critDamage * 0.6);
+    if (divineBonuses.soulPowerCap > 0) maxSoulPower += Math.floor(divineBonuses.soulPowerCap * 0.6);
+    if (divineBonuses.speedBonus > 0) speed += Math.floor(divineBonuses.speedBonus * 0.6);
   }
 
   // Cultivation System Stat Boosts (经脉洗髓、瀑布炼体、紫极魔瞳、七怪共鸣)
@@ -381,15 +401,15 @@ export function calculatePlayerStats(player: Player): PlayerStats {
     unlocked.forEach(meridianId => {
       const meridian = EIGHT_MERIDIANS.find(m => m.id === meridianId);
       if (meridian) {
-        if (meridian.statsBonus.atk) atk += meridian.statsBonus.atk;
-        if (meridian.statsBonus.def) def += meridian.statsBonus.def;
-        if (meridian.statsBonus.hp) maxHp += meridian.statsBonus.hp;
-        if (meridian.statsBonus.speed) speed += meridian.statsBonus.speed;
-        if (meridian.statsBonus.soulPower) maxSoulPower += meridian.statsBonus.soulPower;
-        if (meridian.statsBonus.critRate) critRate += meridian.statsBonus.critRate;
-        if (meridian.statsBonus.critDmg) critDmg += meridian.statsBonus.critDmg;
-        if (meridian.statsBonus.penetration) penetration += meridian.statsBonus.penetration;
-        if (meridian.statsBonus.poisonResist) poisonResist += meridian.statsBonus.poisonResist;
+        if (meridian.statsBonus.atk) atk += Math.floor(meridian.statsBonus.atk * 0.5);
+        if (meridian.statsBonus.def) def += Math.floor(meridian.statsBonus.def * 0.5);
+        if (meridian.statsBonus.hp) maxHp += Math.floor(meridian.statsBonus.hp * 0.5);
+        if (meridian.statsBonus.speed) speed += Math.floor(meridian.statsBonus.speed * 0.5);
+        if (meridian.statsBonus.soulPower) maxSoulPower += Math.floor(meridian.statsBonus.soulPower * 0.5);
+        if (meridian.statsBonus.critRate) critRate += Math.floor(meridian.statsBonus.critRate * 0.5);
+        if (meridian.statsBonus.critDmg) critDmg += Math.floor(meridian.statsBonus.critDmg * 0.5);
+        if (meridian.statsBonus.penetration) penetration += Math.floor(meridian.statsBonus.penetration * 0.5);
+        if (meridian.statsBonus.poisonResist) poisonResist += Math.floor(meridian.statsBonus.poisonResist * 0.5);
       }
     });
 
@@ -398,8 +418,8 @@ export function calculatePlayerStats(player: Player): PlayerStats {
     for (let i = 0; i < physLvl - 1; i++) {
       const stage = WATERFALL_STAGES[i];
       if (stage) {
-        maxHp += stage.hpGain;
-        atk += stage.atkGain;
+        maxHp += Math.floor(stage.hpGain * 0.4);
+        atk += Math.floor(stage.atkGain * 0.4);
       }
     }
 
@@ -407,8 +427,8 @@ export function calculatePlayerStats(player: Player): PlayerStats {
     const currentZijiStage = player.cultivation.zijiEyeStage || '纵观';
     const zijiConfig = ZIJI_EYE_STAGES_CONFIG.find(z => z.stage === currentZijiStage);
     if (zijiConfig) {
-      critRate += zijiConfig.critRateBonus;
-      critDmg += zijiConfig.critDmgBonus;
+      critRate += Math.floor(zijiConfig.critRateBonus * 0.5);
+      critDmg += Math.floor(zijiConfig.critDmgBonus * 0.5);
     }
 
     // 4. 史莱克七怪武魂共鸣合修加成
@@ -416,7 +436,7 @@ export function calculatePlayerStats(player: Player): PlayerStats {
     Object.entries(affinities).forEach(([cid, aff]) => {
       const comrade = SHREK_COMRADES_DATA.find(c => c.id === cid);
       if (comrade && aff > 0) {
-        const ratio = aff / 100;
+        const ratio = aff / 200;
         if (comrade.baseBoost.atk) atk += Math.floor(comrade.baseBoost.atk * ratio);
         if (comrade.baseBoost.def) def += Math.floor(comrade.baseBoost.def * ratio);
         if (comrade.baseBoost.hp) maxHp += Math.floor(comrade.baseBoost.hp * ratio);
@@ -426,39 +446,39 @@ export function calculatePlayerStats(player: Player): PlayerStats {
     });
   }
 
-  // Godhood / Domain bonus
+  // Godhood / Domain bonus (balanced values)
   if (player.hasKillingGodDomain || player.hasAsuraDomain) {
-    atk = Math.floor(atk * 1.2);
-    critRate += 15;
-    penetration += 20;
+    atk = Math.floor(atk * 1.08);
+    critRate += 6;
+    penetration += 8;
   }
   if (player.hasBlueSilverDomain) {
-    maxHp = Math.floor(maxHp * 1.25);
+    maxHp = Math.floor(maxHp * 1.08);
   }
   if (player.hasSeaGodDomain) {
-    atk = Math.floor(atk * 1.2);
-    def = Math.floor(def * 1.2);
-    maxHp = Math.floor(maxHp * 1.15);
+    atk = Math.floor(atk * 1.06);
+    def = Math.floor(def * 1.06);
+    maxHp = Math.floor(maxHp * 1.06);
   }
   if (player.hasAngelDomain) {
-    atk = Math.floor(atk * 1.2);
-    def = Math.floor(def * 1.15);
-    speed = Math.floor(speed * 1.15);
+    atk = Math.floor(atk * 1.06);
+    def = Math.floor(def * 1.05);
+    speed = Math.floor(speed * 1.05);
   }
   if (player.hasRakshasaDomain || player.hasDeathDomain) {
-    atk = Math.floor(atk * 1.22);
-    poisonResist += 50;
-    critDmg += 30;
+    atk = Math.floor(atk * 1.07);
+    poisonResist += 15;
+    critDmg += 10;
   }
 
-  // Level 100 or Godhood Ascended
+  // Level 100 or Godhood Ascended (fair endgame scaling)
   if (player.level >= 100 || player.godPosition) {
-    atk = Math.floor(atk * 1.8);
-    maxHp = Math.floor(maxHp * 1.8);
-    def = Math.floor(def * 1.8);
-    speed = Math.floor(speed * 1.3);
-    critRate = Math.min(100, critRate + 25);
-    critDmg += 50;
+    atk = Math.floor(atk * 1.25);
+    maxHp = Math.floor(maxHp * 1.25);
+    def = Math.floor(def * 1.2);
+    speed = Math.floor(speed * 1.1);
+    critRate = Math.min(100, critRate + 8);
+    critDmg += 15;
   }
 
   return {
@@ -500,11 +520,15 @@ export function loadPlayer(): Player | null {
         if (data.asuraGodTestLevel === undefined) data.asuraGodTestLevel = 0;
         if (data.angelGodTestLevel === undefined) data.angelGodTestLevel = 0;
         if (data.rakshasaGodTestLevel === undefined) data.rakshasaGodTestLevel = 0;
+        if (data.emotionGodTestLevel === undefined) data.emotionGodTestLevel = 0;
+        if (data.dragonGodTestLevel === undefined) data.dragonGodTestLevel = 0;
 
         if (data.seaGodAffinity === undefined) data.seaGodAffinity = 0;
         if (data.asuraGodAffinity === undefined) data.asuraGodAffinity = 0;
         if (data.angelGodAffinity === undefined) data.angelGodAffinity = 0;
         if (data.rakshasaGodAffinity === undefined) data.rakshasaGodAffinity = 0;
+        if (data.emotionGodAffinity === undefined) data.emotionGodAffinity = 0;
+        if (data.dragonGodAffinity === undefined) data.dragonGodAffinity = 0;
 
         if (data.hasKillingGodDomain === undefined) data.hasKillingGodDomain = false;
         if (data.hasBlueSilverDomain === undefined) data.hasBlueSilverDomain = false;
@@ -513,8 +537,11 @@ export function loadPlayer(): Player | null {
         if (data.hasAsuraDomain === undefined) data.hasAsuraDomain = false;
         if (data.hasRakshasaDomain === undefined) data.hasRakshasaDomain = false;
         if (data.hasDeathDomain === undefined) data.hasDeathDomain = false;
+        if (data.hasDragonGodDomain === undefined) data.hasDragonGodDomain = false;
 
         if (!data.divineArtifacts) data.divineArtifacts = [];
+        if (data.divineSourcePoints === undefined) data.divineSourcePoints = 0;
+        if (!data.divineTalents) data.divineTalents = {};
 
         // Ensure cultivation state is initialized
         if (!data.cultivation) {

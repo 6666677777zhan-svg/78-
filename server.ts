@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import { GoogleGenAI } from '@google/genai';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
 import {
@@ -20,7 +21,24 @@ import {
 
 const PORT = 3000;
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+
+// Per-IP Rate Limiting for Express server
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+app.use('/api', (req, res, next) => {
+  const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + 60000 });
+    return next();
+  }
+  if (record.count >= 60) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
+  }
+  record.count += 1;
+  next();
+});
 
 const httpServer = http.createServer(app);
 const io = new SocketIOServer(httpServer, {
@@ -505,6 +523,62 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/leaderboard', (req, res) => {
   res.json(generateLeaderboard());
+});
+
+app.post('/api/ai-helper', async (req, res) => {
+  const body = req.body;
+  if (!body || typeof body !== 'object') {
+    return res.status(400).json({ error: 'Invalid JSON body.' });
+  }
+
+  const allowedKeys = ['prompt', 'martialSoul', 'level'];
+  const hasExtraKeys = Object.keys(body).some(k => !allowedKeys.includes(k));
+  if (hasExtraKeys) {
+    return res.status(400).json({ error: 'Request body contains invalid or unexpected fields.' });
+  }
+
+  const { prompt, martialSoul, level } = body;
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    return res.status(400).json({ error: 'Prompt is required and must be a non-empty string.' });
+  }
+
+  if (prompt.length > 1000) {
+    return res.status(400).json({ error: 'Prompt exceeds maximum length of 1000 characters.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({
+      error: 'GEMINI_API_KEY environment variable is not configured on the server.',
+      fallbackAdvice: `Grandmaster Advice for [${martialSoul || 'Soul Master'}] (Lv.${level || 1}): Focus on hunting high-year spirit beasts in the Great Star Dou Forest and train in the Arena to unlock Spirit Saint Avatar!`
+    });
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `You are Grandmaster Yu Xiaogang in Douluo Dalu (Soul Land). Provide concise, strategic advice for a Spirit Master (Martial Soul: ${martialSoul || 'Unknown'}, Level: ${level || 10}). User question: "${prompt.trim()}". Keep advice to maximum 3 sentences.`
+            }
+          ]
+        }
+      ]
+    });
+
+    const reply = response.text || 'Grandmaster is currently pondering spiritual laws.';
+    return res.status(200).json({ advice: reply });
+  } catch (err: any) {
+    console.error('Gemini API Error:', err?.message || err);
+    return res.status(500).json({
+      error: 'Failed to communicate with AI Service.',
+      details: err?.message || 'Unknown error'
+    });
+  }
 });
 
 // ================= SOCKET.IO REALTIME EVENTS =================

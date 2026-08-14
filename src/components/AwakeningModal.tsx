@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ALL_MARTIAL_SOULS } from '../data/martialSouls';
 import { Player } from '../types/game';
 import { createDefaultPlayer } from '../utils/saveManager';
@@ -9,7 +9,7 @@ import {
   Sparkles, Shield, Flame, Zap, Sun, Hammer, Moon, 
   Sprout, Sword, Skull, Heart, Snowflake, Crown, Layers, 
   ArrowRight, CheckCircle, RefreshCw, Wand2, Eye, Award,
-  Check, Image
+  Check, Image, Volume2
 } from 'lucide-react';
 
 interface AwakeningModalProps {
@@ -18,6 +18,201 @@ interface AwakeningModalProps {
   onClose?: () => void;
   initialSoulId?: string;
 }
+
+/* ================= AWAKENING RITUAL PARTICLE CANVAS ================= */
+interface AwakeningParticleCanvasProps {
+  step: 'hall' | 'select' | 'awakening' | 'result';
+  stoneProgress: number;
+  crystalEnergy: number;
+}
+
+const AwakeningParticleCanvas: React.FC<AwakeningParticleCanvasProps> = ({
+  step,
+  stoneProgress,
+  crystalEnergy
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = canvas.offsetWidth || 800);
+    let height = (canvas.height = canvas.offsetHeight || 600);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.offsetWidth || 800;
+      height = canvas.height = canvas.offsetHeight || 600;
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    const colors = ['#f59e0b', '#fde047', '#38bdf8', '#c084fc', '#f43f5e', '#67e8f9', '#a855f7'];
+
+    interface Particle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      color: string;
+      alpha: number;
+      maxAlpha: number;
+      decay: number;
+      angle: number;
+      orbitRadius: number;
+      angularSpeed: number;
+    }
+
+    const particles: Particle[] = [];
+    const count = step === 'awakening' ? 140 : step === 'result' ? 110 : 60;
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * Math.min(width, height) * 0.45;
+      particles.push({
+        x: width / 2 + Math.cos(angle) * radius,
+        y: height / 2 + Math.sin(angle) * radius,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.8) * 1.8,
+        size: Math.random() * 3.8 + 1.2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: Math.random(),
+        maxAlpha: Math.random() * 0.8 + 0.2,
+        decay: Math.random() * 0.015 + 0.005,
+        angle,
+        orbitRadius: radius,
+        angularSpeed: (Math.random() * 0.035 + 0.01) * (Math.random() < 0.5 ? 1 : -1)
+      });
+    }
+
+    let frame = 0;
+
+    const render = () => {
+      frame++;
+      ctx.clearRect(0, 0, width, height);
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      // Draw subtle glowing background aura gradient
+      const auraGradient = ctx.createRadialGradient(
+        centerX, centerY, 10,
+        centerX, centerY, Math.min(width, height) * 0.65
+      );
+      if (step === 'awakening') {
+        const intensity = 0.2 + (crystalEnergy / 100) * 0.4 + (stoneProgress / 6) * 0.2;
+        auraGradient.addColorStop(0, `rgba(245, 158, 11, ${intensity})`);
+        auraGradient.addColorStop(0.4, `rgba(168, 85, 247, ${intensity * 0.5})`);
+        auraGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      } else if (step === 'result') {
+        auraGradient.addColorStop(0, 'rgba(251, 191, 36, 0.4)');
+        auraGradient.addColorStop(0.5, 'rgba(56, 189, 248, 0.18)');
+        auraGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      } else {
+        auraGradient.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
+        auraGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      }
+      ctx.fillStyle = auraGradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Render & Update Particles
+      particles.forEach(p => {
+        if (step === 'awakening') {
+          // Vortex spiral inwards toward crystal center
+          const speedMultiplier = 1 + (crystalEnergy / 100) * 2.2;
+          p.angle += p.angularSpeed * speedMultiplier;
+          p.orbitRadius -= (0.5 + (stoneProgress / 6) * 0.9) * speedMultiplier;
+
+          if (p.orbitRadius < 15) {
+            p.orbitRadius = Math.min(width, height) * (0.38 + Math.random() * 0.15);
+            p.angle = Math.random() * Math.PI * 2;
+          }
+
+          p.x = centerX + Math.cos(p.angle) * p.orbitRadius;
+          p.y = centerY + Math.sin(p.angle) * p.orbitRadius;
+          p.alpha = Math.min(p.maxAlpha, (p.orbitRadius / (width * 0.3)) * p.maxAlpha + 0.25);
+        } else if (step === 'result') {
+          // Radiating explosion outward + gentle floating
+          p.x += p.vx * 1.5;
+          p.y += p.vy * 1.5;
+          p.alpha -= p.decay * 0.5;
+
+          if (p.alpha <= 0 || p.x < 0 || p.x > width || p.y < 0 || p.y > height) {
+            const burstAngle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * 90;
+            p.x = centerX + Math.cos(burstAngle) * dist;
+            p.y = centerY + Math.sin(burstAngle) * dist;
+            p.vx = Math.cos(burstAngle) * (Math.random() * 3.5 + 1);
+            p.vy = Math.sin(burstAngle) * (Math.random() * 3.5 + 1);
+            p.alpha = p.maxAlpha;
+          }
+        } else {
+          // Gentle upward float
+          p.y += p.vy * 0.8;
+          p.x += Math.sin(frame * 0.02 + p.angle) * 0.5;
+          p.alpha += (Math.random() - 0.5) * 0.05;
+          if (p.alpha < 0.1) p.alpha = 0.1;
+          if (p.alpha > p.maxAlpha) p.alpha = p.maxAlpha;
+
+          if (p.y < -20) {
+            p.y = height + 10;
+            p.x = Math.random() * width;
+          }
+        }
+
+        // Draw Particle
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = p.size * (step === 'awakening' ? 5 : 2.5);
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Special Light Rays on 'result' step
+      if (step === 'result') {
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(frame * 0.003);
+        const rays = 8;
+        for (let r = 0; r < rays; r++) {
+          const rayAngle = (r / rays) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.arc(0, 0, Math.max(width, height), rayAngle - 0.08, rayAngle + 0.08);
+          ctx.fillStyle = r % 2 === 0 ? 'rgba(245, 158, 11, 0.035)' : 'rgba(56, 189, 248, 0.025)';
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [step, stoneProgress, crystalEnergy]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none z-0 rounded-3xl"
+    />
+  );
+};
 
 export const AwakeningModal: React.FC<AwakeningModalProps> = ({ 
   onAwakenPlayer,
@@ -38,6 +233,16 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
   const [stoneProgress, setStoneProgress] = useState(0);
   const [crystalEnergy, setCrystalEnergy] = useState(0);
   const [awakeningText, setAwakeningText] = useState('正在汇聚天地纯净灵力...');
+
+  // Start BGM on modal open & cleanup on close
+  useEffect(() => {
+    if (isOpen) {
+      SoundEngine.startAwakeningBgm();
+    }
+    return () => {
+      SoundEngine.stopAwakeningBgm();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -67,6 +272,9 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
     setStoneProgress(0);
     setCrystalEnergy(0);
     setAwakeningText('六颗黑曜石法阵激活，天地灵力疯狂灌注...');
+    
+    // Elevate BGM to intense ceremony audio!
+    SoundEngine.setAwakeningCeremonyMusicIntense();
     SoundEngine.playSoulRingAura('gold');
 
     // Step 1: 6 Stones lighting up
@@ -87,12 +295,14 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
           if (power >= 100) {
             clearInterval(crystalInterval);
             setAwakeningText('天生异象！神级绝世武魂 · 先天满魂力！');
-            SoundEngine.playBreakthrough();
+            
+            // Grand Awakening Fanfare BGM & Jingle
+            SoundEngine.playAwakeningFanfare();
             
             try {
               confetti({
-                particleCount: 150,
-                spread: 90,
+                particleCount: 180,
+                spread: 100,
                 origin: { y: 0.5 }
               });
             } catch {}
@@ -107,6 +317,7 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
   };
 
   const handleConfirmAndEnterGame = () => {
+    SoundEngine.stopAwakeningBgm();
     SoundEngine.playSoulRingAura('red');
 
     const freshPlayer = createDefaultPlayer(
@@ -128,6 +339,19 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-3 md:p-6 overflow-y-auto select-none">
       <div className="bg-slate-900/90 border-2 border-amber-500/50 rounded-3xl max-w-4xl w-full p-6 md:p-8 text-slate-100 shadow-[0_0_80px_rgba(245,158,11,0.25)] relative overflow-hidden flex flex-col my-auto">
         
+        {/* Dynamic Canvas Particle Overlay for Ritual Atmosphere */}
+        <AwakeningParticleCanvas
+          step={step}
+          stoneProgress={stoneProgress}
+          crystalEnergy={crystalEnergy}
+        />
+
+        {/* Dynamic Music Indicator Badge */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 bg-amber-950/80 border border-amber-500/40 rounded-full text-[10px] text-amber-300 font-bold backdrop-blur-md">
+          <Volume2 className="w-3 h-3 text-amber-400 animate-pulse" />
+          <span>{step === 'awakening' ? '神乐仪式: 灵力灌注' : step === 'result' ? '神乐仪式: 神威降临' : '神乐仪式: 圣魂殿堂'}</span>
+        </div>
+
         {/* Divine Background Elements */}
         <div className="absolute -top-32 -left-32 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -136,7 +360,10 @@ export const AwakeningModal: React.FC<AwakeningModalProps> = ({
         {/* Close Button if opened from in-game navbar */}
         {onClose && (
           <button 
-            onClick={onClose}
+            onClick={() => {
+              SoundEngine.stopAwakeningBgm();
+              onClose();
+            }}
             className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800/80 border border-slate-700 hover:bg-slate-700 transition-colors z-20"
           >
             ✕

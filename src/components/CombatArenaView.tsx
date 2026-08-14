@@ -6,6 +6,7 @@ import { SoulRingsDisplay } from './SoulRingsDisplay';
 import { BATTLE_ARMOR_RANKS } from '../data/battleArmor';
 import { DEFAULT_AVATAR_URL } from '../data/avatars';
 import confetti from 'canvas-confetti';
+import { MartialSoulSkillFxOverlay, ActiveSkillFxState } from './MartialSoulSkillFxOverlay';
 import { 
   Swords, Shield, Zap, Heart, Award, Skull, Flame, Sparkles, 
   Bot, AlertOctagon, ShieldCheck, Crosshair, Wind, Eye
@@ -136,9 +137,41 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
   const [screenShake, setScreenShake] = useState(false);
   const [battleState, setBattleState] = useState<'ongoing' | 'victory' | 'defeat'>('ongoing');
   const [isAutoBattle, setIsAutoBattle] = useState<boolean>(player.isMeditationAuto || false);
+  const [activeSkillFx, setActiveSkillFx] = useState<ActiveSkillFxState | null>(null);
 
   const logContainerRef = useRef<HTMLDivElement>(null);
   const strategy = player.autoBattleStrategy;
+
+  // Trigger martial soul skill SVG path animation feedback
+  const triggerSkillFx = (
+    skillName: string,
+    soulName?: string,
+    colorTheme?: ActiveSkillFxState['colorTheme'],
+    isCrit?: boolean
+  ) => {
+    const activeName = soulName || activeSoul?.name || '武魂奥义';
+    let theme = colorTheme;
+    if (!theme) {
+      if (activeName.includes('锤')) theme = 'hammer';
+      else if (activeName.includes('草') || activeName.includes('皇')) theme = 'grass';
+      else if (activeName.includes('虎') || activeName.includes('猫') || activeName.includes('龙')) theme = 'tiger';
+      else if (activeName.includes('天使')) theme = 'angel';
+      else if (activeName.includes('塔') || activeName.includes('琉璃')) theme = 'pagoda';
+      else theme = 'gold';
+    }
+
+    const isPossessed = (player.godPossessionUntil || 0) > Date.now();
+    const godPos = player.godPosition || null;
+
+    setActiveSkillFx({
+      id: `fx_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      skillName,
+      soulName: activeName,
+      colorTheme: theme,
+      isCrit,
+      godPossessionTheme: isPossessed ? (godPos || '海神') : (godPos || null)
+    });
+  };
 
   // Equipped soul bones with active skills
   const equippedBonesWithSkills = (Object.values(player.soulBones || {}) as (SoulBone | undefined)[]).filter(
@@ -386,7 +419,7 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
 
     // Check Player Dodge (Ghost Shadow Track)
     if (playerDodgeBuff > 0) {
-      if (Math.random() < 0.65) {
+      if (Math.random() < 0.35) {
         SoundEngine.playClick();
         triggerDamageFloat('完全闪避！', false, 'dodge', true);
         addLog(player.name, `施展【鬼影迷踪】，幻影残相优雅闪避了致命一击！`, 'buff');
@@ -398,9 +431,9 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
       }
     }
 
-    // Tang sect Mysterious Jade Hand & Defensive Reduction
-    const xuanyuDef = (player.tangSectSkills?.xuanyu?.level || 1) * 12;
-    const finalDmg = Math.max(20, Math.floor(baseDmg - (playerStats.def * 0.45) - xuanyuDef));
+    // Tang sect Mysterious Jade Hand & Defensive Reduction (balanced mitigation)
+    const xuanyuDef = (player.tangSectSkills?.xuanyu?.level || 1) * 5;
+    const finalDmg = Math.max(25, Math.floor(baseDmg - (playerStats.def * 0.28) - xuanyuDef));
 
     // Shield Absorption
     let remainingDmg = finalDmg;
@@ -487,7 +520,13 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
         }
       });
       if (totalDot > 0) {
-        setPlayerHp(prev => Math.max(0, prev - totalDot));
+        setPlayerHp(prev => {
+          const next = Math.max(0, prev - totalDot);
+          if (next <= 0) {
+            handleDefeat();
+          }
+          return next;
+        });
         triggerDamageFloat(`-${totalDot}`, false, 'poison', true);
         addLog(player.name, `体内气血翻涌，受到异常侵蚀损失 ${totalDot} 点生命值！`, 'debuff');
       }
@@ -504,7 +543,7 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     triggerShake();
 
     const zijiLvl = player.tangSectSkills?.ziji?.level || 1;
-    const shockDmg = Math.floor(playerStats.atk * 1.8 + zijiLvl * 120);
+    const shockDmg = Math.floor(playerStats.atk * 1.1 + zijiLvl * 45);
 
     setEnemyDebuffs(prev => [...prev.filter(d => d.type !== 'stun'), {
       id: `stun_${Date.now()}`,
@@ -514,6 +553,7 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
       value: 0
     }]);
 
+    triggerSkillFx('紫极魔瞳 · 精神震慑', '唐门绝技', 'purple', true);
     applyDamageToEnemy(
       shockDmg,
       true,
@@ -528,7 +568,8 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     setPlayerDodgeBuff(2);
     SoundEngine.playClick();
 
-    addLog(player.name, `施展【唐门绝技 · 鬼影迷踪】！步伐虚幻如鬼魅，下一回合获得 65% 绝对闪避率！`, 'buff');
+    triggerSkillFx('鬼影迷踪 · 虚幻步伐', '唐门绝技', 'purple', false);
+    addLog(player.name, `施展【唐门绝技 · 鬼影迷踪】！步伐虚幻如鬼魅，下一回合获得 35% 灵巧闪避率！`, 'buff');
     setTimeout(() => endPlayerTurn(), 450);
   };
 
@@ -537,11 +578,12 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     setIsProcessing(true);
     setXuanyuCooldown(3);
     setPlayerDebuffs([]);
-    const shieldGain = Math.floor(playerMaxHp * 0.35 + playerStats.def * 3);
+    const shieldGain = Math.floor(playerMaxHp * 0.18 + playerStats.def * 1.5);
     setPlayerShield(prev => prev + shieldGain);
     SoundEngine.playSkill();
     triggerDamageFloat(`净化+${shieldGain}护盾`, false, 'shield', true);
 
+    triggerSkillFx('玄玉手 · 御之壁', '唐门绝技', 'grass', false);
     addLog(player.name, `双掌凝如寒玉！运转【玄玉手 · 御之壁】，瞬间净化全身负面状态并获得 ${shieldGain} 点玄玉护盾！`, 'heal');
     setTimeout(() => endPlayerTurn(), 500);
   };
@@ -552,14 +594,15 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     setIsProcessing(true);
     SoundEngine.playSlash();
 
-    const isCrit = Math.random() < ((playerStats.critRate + (player.tangSectSkills?.ziji?.level || 1) * 3) / 100);
+    const isCrit = Math.random() < ((playerStats.critRate + (player.tangSectSkills?.ziji?.level || 1) * 1.5) / 100);
     const critMult = isCrit ? (1 + (playerStats.critDmg || 50) / 100) : 1.0;
-    const avatarMult = isAvatarActive ? 1.5 : 1.0;
-    const domainMult = isDomainActive ? 1.2 : 1.0;
+    const avatarMult = isAvatarActive ? 1.25 : 1.0;
+    const domainMult = isDomainActive ? 1.1 : 1.0;
 
     const rawAtk = playerStats.atk * critMult * avatarMult * domainMult;
-    const finalDmg = Math.max(20, Math.floor(rawAtk - scaledEnemyDef * 0.35));
+    const finalDmg = Math.max(15, Math.floor(rawAtk * 0.75 - scaledEnemyDef * 0.45));
 
+    triggerSkillFx('近身重击', activeSoul.name, undefined, isCrit);
     applyDamageToEnemy(finalDmg, isCrit, `${player.name} 驭动 ${activeSoul.name} 发动近身普通打击！`);
   };
 
@@ -578,28 +621,38 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     setPlayerMp(prev => prev - skill.soulPowerCost);
     setSkillCooldowns(prev => ({ ...prev, [skill.id]: skill.cooldown }));
 
-    if (skill.animationType === 'lightning') SoundEngine.playThunder();
-    else if (skill.animationType === 'smash') { SoundEngine.playSmash(); triggerShake(); }
-    else SoundEngine.playSlash();
+    const isPossessed = (player.godPossessionUntil || 0) > Date.now();
+    if (player.godPosition || isPossessed) {
+      SoundEngine.playDivineDeclaration(player.godPosition || '海神', skill.name);
+    } else if (skill.animationType === 'lightning') {
+      SoundEngine.playThunder();
+    } else if (skill.animationType === 'smash') {
+      SoundEngine.playSmash();
+      triggerShake();
+    } else {
+      SoundEngine.playSlash();
+    }
 
     if (skill.isAvatar) {
       setIsAvatarActive(true);
-      setPlayerShield(prev => prev + Math.floor(playerMaxHp * 0.45));
+      setPlayerShield(prev => prev + Math.floor(playerMaxHp * 0.22));
       SoundEngine.playSoulRingAura('gold');
-      addLog(player.name, `【第七魂技 · 武魂真身】降临！全属性暴涨100%并获得巨额真身护盾！`, 'buff');
+      triggerSkillFx('武魂真身 · 绝世降临', activeSoul.name, 'gold', true);
+      addLog(player.name, `【第七魂技 · 武魂真身】降临！激发武魂真意，获得 25% 属性强化与真身护盾！`, 'buff');
       setTimeout(() => endPlayerTurn(), 500);
       return;
     }
 
-    const isCrit = Math.random() < ((playerStats.critRate + 15) / 100);
+    const isCrit = Math.random() < ((playerStats.critRate + 8) / 100);
     const critMult = isCrit ? (1 + (playerStats.critDmg || 50) / 100) : 1.0;
-    const avatarMult = isAvatarActive ? 1.5 : 1.0;
-    const domainMult = isDomainActive ? 1.25 : 1.0;
+    const avatarMult = isAvatarActive ? 1.25 : 1.0;
+    const domainMult = isDomainActive ? 1.15 : 1.0;
 
-    const mult = skill.damageMultiplier || 2.0;
+    const mult = (skill.damageMultiplier || 1.8) * 0.75;
     const rawAtk = playerStats.atk * mult * critMult * avatarMult * domainMult;
-    const finalDmg = Math.max(30, Math.floor(rawAtk - scaledEnemyDef * 0.3));
+    const finalDmg = Math.max(20, Math.floor(rawAtk * 0.8 - scaledEnemyDef * 0.4));
 
+    triggerSkillFx(skill.name, activeSoul.name, undefined, isCrit);
     applyDamageToEnemy(finalDmg, isCrit, `${player.name} 施展【${skill.name}】！${skill.description}`);
   };
 
@@ -612,14 +665,15 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
 
     setHiddenWeaponInventory(prev => prev.map(w => w.id === weapon.id ? { ...w, quantity: w.quantity - 1 } : w));
 
-    let finalDmg = weapon.damage;
+    let finalDmg = Math.floor(weapon.damage * 0.65);
     if (weapon.rank === 'god') {
-      finalDmg = Math.floor(weapon.damage * 1.5);
+      finalDmg = Math.floor(weapon.damage * 0.85);
       SoundEngine.playThunder();
     }
 
     triggerDamageFloat(`-${finalDmg}`, true, 'gold', false);
-    applyDamageToEnemy(finalDmg, true, `${player.name} 掷出唐门绝顶机括暗器【${weapon.name}】！机簧炸裂，破空穿刺！`);
+    triggerSkillFx(`暗器 · ${weapon.name}`, '唐门暗器', 'gold', true);
+    applyDamageToEnemy(finalDmg, true, `${player.name} 掷出唐门机括暗器【${weapon.name}】！机簧炸裂，破空穿刺！`);
   };
 
   const handleUseBoneSkill = (bone: SoulBone) => {
@@ -630,8 +684,9 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     SoundEngine.playSmash();
     triggerShake();
 
-    const dmg = Math.floor((bone.atkBonus + player.level * 12) * 3.2);
-    applyDamageToEnemy(dmg, true, `${player.name} 引动【${bone.name}】至尊神技【${bone.skillName}】！`);
+    const dmg = Math.floor((bone.atkBonus * 0.6 + player.level * 6) * 1.8);
+    triggerSkillFx(bone.skillName || '魂骨神技', bone.name, 'gold', true);
+    applyDamageToEnemy(dmg, true, `${player.name} 引动【${bone.name}】魂技【${bone.skillName}】！`);
   };
 
   const handleActivateBattleArmor = () => {
@@ -652,19 +707,20 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     const pieceAtk: number = piecesList.reduce((sum: number, p: any): number => sum + (Number(p?.atkBonus) || 0), 0);
     const pieceDef: number = piecesList.reduce((sum: number, p: any): number => sum + (Number(p?.defBonus) || 0), 0);
 
-    const rankMult: number = Number(rankMeta?.multiplier) || 1.6;
-    const shieldBonus: number = Math.max(600, Math.floor(playerMaxHp * 0.45 + (playerStats.def + pieceDef) * 2.8));
+    const rankMult: number = Number(rankMeta?.multiplier) || 1.3;
+    const shieldBonus: number = Math.max(300, Math.floor(playerMaxHp * 0.2 + (playerStats.def + pieceDef) * 1.2));
     setPlayerShield(prev => prev + shieldBonus);
     triggerDamageFloat(`斗铠护盾+${shieldBonus}`, false, 'shield', true);
 
     const critMult: number = 1 + (Number(playerStats.critDmg) || 50) / 100;
-    const baseDamage: number = (playerStats.atk * 2.8 + pieceAtk * 3.5 + player.level * 30) * rankMult;
-    const calculatedDmg: number = Math.max(150, Math.floor(baseDamage * critMult));
+    const baseDamage: number = (playerStats.atk * 1.6 + pieceAtk * 2.0 + player.level * 15) * rankMult;
+    const calculatedDmg: number = Math.max(100, Math.floor(baseDamage * critMult * 0.7));
 
+    triggerSkillFx(skillName, armorRankTitle, 'angel', true);
     applyDamageToEnemy(
       calculatedDmg,
       true,
-      `${player.name} 全身斗铠共鸣显化！引爆【${armorRankTitle} · ${armorCustomName}】神套合击【${skillName}】！神光湮灭，生成 ${shieldBonus} 点神御护盾！`
+      `${player.name} 全身斗铠共鸣显化！引爆【${armorRankTitle} · ${armorCustomName}】神套合击【${skillName}】！生成 ${shieldBonus} 点护盾！`
     );
   };
 
@@ -678,14 +734,16 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     triggerShake();
 
     if (tool.category === 'defense') {
-      const shieldVal = Math.floor(playerMaxHp * 0.5);
+      const shieldVal = Math.floor(playerMaxHp * 0.25);
       setPlayerShield(prev => prev + shieldVal);
       triggerDamageFloat(`+${shieldVal} 无敌护罩`, false, 'shield', true);
-      addLog(player.name, `激活【${tool.name}】！展开绝对防御力场，获得 ${shieldVal} 点无敌护盾！`, 'buff');
+      triggerSkillFx(tool.name, '高能魂导器', 'pagoda', false);
+      addLog(player.name, `激活【${tool.name}】！展开防御力场，获得 ${shieldVal} 点护盾！`, 'buff');
       setTimeout(() => endPlayerTurn(), 600);
     } else {
-      const toolDmg = Math.floor(tool.tierLevel * 800 + player.level * 25);
-      applyDamageToEnemy(toolDmg, true, `${player.name} 扣动【${tool.name}】扳机！高能毁灭魂力光束贯穿全场！`);
+      const toolDmg = Math.floor(tool.tierLevel * 350 + player.level * 12);
+      triggerSkillFx(tool.name, '高能魂导器', 'pagoda', true);
+      applyDamageToEnemy(toolDmg, true, `${player.name} 扣动【${tool.name}】扳机！高能魂力光束贯穿全场！`);
     }
   };
 
@@ -698,7 +756,8 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     triggerShake();
 
     const compSkill = companion.skills[0];
-    const compDmg = Math.floor(companion.baseAtk * 2.8 + player.level * 20);
+    const compDmg = Math.floor(companion.baseAtk * 1.5 + player.level * 10);
+    triggerSkillFx(compSkill.name, companion.name, 'tiger', true);
     applyDamageToEnemy(compDmg, true, `战队伙伴【${companion.name}】协同突击！施展成名绝技【${compSkill.name}】！`);
   };
 
@@ -710,20 +769,23 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     SoundEngine.playBreakthrough();
     triggerShake();
 
-    const mult = soul.spiritSkill.damageMultiplier || 3.0;
-    const baseAtk = activeSoul.baseAtk + player.level * 15 + (soul.statsBonus?.atk || 0);
+    const mult = (soul.spiritSkill.damageMultiplier || 3.0) * 0.55;
+    const baseAtk = activeSoul.baseAtk + player.level * 8 + ((soul.statsBonus?.atk || 0) * 0.5);
     const dmg = Math.floor(baseAtk * mult);
 
     if (soul.spiritSkill.healAmount) {
-      setPlayerHp(prev => Math.min(playerMaxHp, prev + soul.spiritSkill.healAmount));
-      triggerDamageFloat(`+${soul.spiritSkill.healAmount} 治疗`, false, 'heal', true);
+      const healAmt = Math.floor(soul.spiritSkill.healAmount * 0.6);
+      setPlayerHp(prev => Math.min(playerMaxHp, prev + healAmt));
+      triggerDamageFloat(`+${healAmt} 治疗`, false, 'heal', true);
     }
     if (soul.spiritSkill.shieldAmount) {
-      setPlayerShield(prev => prev + soul.spiritSkill.shieldAmount);
-      triggerDamageFloat(`魂灵护盾+${soul.spiritSkill.shieldAmount}`, false, 'shield', true);
+      const shieldAmt = Math.floor(soul.spiritSkill.shieldAmount * 0.6);
+      setPlayerShield(prev => prev + shieldAmt);
+      triggerDamageFloat(`魂灵护盾+${shieldAmt}`, false, 'shield', true);
     }
 
-    applyDamageToEnemy(dmg, true, `❄️ 契约魂灵【${soul.name}】显灵！施放神技【${soul.spiritSkill.name}】！`);
+    triggerSkillFx(soul.spiritSkill.name, soul.name, 'grass', true);
+    applyDamageToEnemy(dmg, true, `❄️ 契约魂灵【${soul.name}】显灵！施放魂技【${soul.spiritSkill.name}】！`);
   };
 
   const handleMechaWeapon = (mecha: any) => {
@@ -734,28 +796,30 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
     SoundEngine.playThunder();
     triggerShake();
 
-    const mult = mecha.mechaWeapon.dmgMultiplier || 3.5;
-    const dmg = Math.floor((activeSoul.baseAtk + mecha.combatStats.atk + player.level * 20) * mult);
+    const mult = (mecha.mechaWeapon.dmgMultiplier || 3.5) * 0.55;
+    const dmg = Math.floor((activeSoul.baseAtk + (mecha.combatStats.atk * 0.5) + player.level * 10) * mult);
 
     if (mecha.combatStats.shield) {
-      const shieldGain = Math.floor(mecha.combatStats.shield * 0.3);
+      const shieldGain = Math.floor(mecha.combatStats.shield * 0.15);
       setPlayerShield(prev => prev + shieldGain);
       triggerDamageFloat(`机甲护甲+${shieldGain}`, false, 'shield', true);
     }
 
-    applyDamageToEnemy(dmg, true, `🤖 出动【${mecha.name}】机甲！轰射碎星主炮【${mecha.mechaWeapon.name}】！`);
+    triggerSkillFx(mecha.mechaWeapon.name, mecha.name, 'hammer', true);
+    applyDamageToEnemy(dmg, true, `🤖 出动【${mecha.name}】机甲！轰射【${mecha.mechaWeapon.name}】！`);
   };
 
   const handleActivateDomain = () => {
     if (isDomainActive || !isPlayerTurn || isProcessing) return;
     setIsDomainActive(true);
     SoundEngine.playSoulRingAura('red');
-    addLog(player.name, `【杀神 / 海神领域】全力展开！猩红神光笼罩战场，压制敌方25%攻击力并强化我方威能！`, 'domain');
+    triggerSkillFx('杀神 / 海神领域', '神级领域', 'red', true);
+    addLog(player.name, `【杀神 / 海神领域】展开！神光笼罩战场，压制敌方15%攻击力并强化我方！`, 'domain');
   };
 
   const handleUsePotion = () => {
     if (!isPlayerTurn || isProcessing) return;
-    const healVal = Math.floor(playerMaxHp * 0.4);
+    const healVal = Math.floor(playerMaxHp * 0.25);
     setPlayerHp(prev => Math.min(playerMaxHp, prev + healVal));
     triggerDamageFloat(`+${healVal} 回复`, false, 'heal', true);
     addLog(player.name, `服下九宝回魂丹，瞬间愈合周身伤势并回复 ${healVal} 点生命值！`, 'heal');
@@ -830,6 +894,9 @@ export const CombatArenaView: React.FC<CombatArenaViewProps> = ({
   return (
     <div className={`relative w-full max-w-5xl mx-auto bg-slate-950 border border-slate-800 rounded-3xl p-4 md:p-6 text-slate-100 shadow-2xl overflow-hidden ${screenShake ? 'animate-bounce' : ''}`}>
       
+      {/* Martial Soul Skill SVG Path Animation Overlay */}
+      <MartialSoulSkillFxOverlay activeFx={activeSkillFx} onAnimationComplete={() => setActiveSkillFx(null)} />
+
       {/* Background Arena Theme Aura */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/40 via-slate-950 to-slate-950 pointer-events-none" />
       {isDomainActive && (
